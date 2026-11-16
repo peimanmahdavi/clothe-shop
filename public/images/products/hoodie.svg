@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="هودی">
+    <defs>
+        <linearGradient id="hoodieBody" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#BAE6FD"/>
+        </linearGradient>
+        <linearGradient id="hoodieHood" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#E0F2FE"/>
+            <stop offset="1" stop-color="#7DD3FC"/>
+        </linearGradient>
+    </defs>
+    <ellipse cx="200" cy="352" rx="112" ry="14" fill="#0EA5E9" opacity=".12"/>
+    <path d="M148 82 104 106 62 168l44 32 26-26v168h136V174l26 26 44-32-42-62-44-24Z" fill="url(#hoodieBody)" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M148 78c0-44 104-44 104 0 0 34-24 52-52 52s-52-18-52-52Z" fill="url(#hoodieHood)" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M168 126c10 14 54 14 64 0" fill="none" stroke="#0EA5E9" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+    <path d="M156 258h88l10 50h-108Z" fill="#E0F2FE" stroke="#38BDF8" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M184 122v44" stroke="#0EA5E9" stroke-width="5" stroke-linecap="round"/>
+    <path d="M216 122v44" stroke="#0EA5E9" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="184" cy="170" r="5" fill="#0EA5E9"/>
+    <circle cx="216" cy="170" r="5" fill="#0EA5E9"/>
+    <path d="M132 314h136" stroke="#38BDF8" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+    <path d="M104 106l-18 34" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <path d="M296 106l18 34" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+</svg>

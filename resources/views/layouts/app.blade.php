@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="scroll-pt-36">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#0ea5e9">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+
+        <title>@yield('title', 'آسمان‌پوش | فروشگاه پوشاک مینیمال')</title>
+        <meta name="description" content="@yield('description', 'آسمان‌پوش؛ فروشگاه پوشاک مینیمال با پارچه‌های نخی، رنگ‌های آرام و ارسال سریع به سراسر ایران.')">
+
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    </head>
+    <body class="min-h-screen bg-canvas">
+        <a href="#main" class="sr-only rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white focus:not-sr-only focus:absolute focus:top-3 focus:start-3 focus:z-[60]">
+            پرش به محتوای اصلی
+        </a>
+
+        @php
+            $navItems = [
+                ['label' => 'خانه', 'href' => route('home'), 'current' => request()->routeIs('home')],
+                ['label' => 'محصولات', 'href' => route('products.index'), 'current' => request()->routeIs('products.*')],
+                ['label' => 'پرفروش‌ها', 'href' => route('home') . '#products'],
+                ['label' => 'دسته‌بندی‌ها', 'href' => route('home') . '#categories'],
+                ['label' => 'حراج ویژه', 'href' => route('home') . '#sale', 'urgent' => true],
+                ['label' => 'تماس با ما', 'href' => route('home') . '#contact'],
+            ];
+        @endphp
+
+        <header class="sticky top-0 z-50 w-full">
+            <div class="border-b border-red-100 bg-accent-soft">
+                <div class="container-page flex items-center justify-between gap-3 py-2">
+                    <p class="flex min-w-0 items-center gap-2 text-xs font-semibold text-accent sm:text-sm">
+                        <span class="relative flex size-2 shrink-0 rounded-full bg-accent">
+                            <span class="absolute inline-flex size-full animate-ping rounded-full bg-accent/70"></span>
+                        </span>
+                        <span class="truncate">جشنواره پایان فصل؛ تا ۵۰٪ تخفیف روی کالکشن پاییز</span>
+                    </p>
+                    <a href="{{ route('home') }}#sale" class="hidden shrink-0 items-center gap-1 text-xs font-bold text-accent underline decoration-accent/40 underline-offset-4 transition hover:decoration-accent sm:inline-flex">
+                        مشاهده پیشنهادها
+                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="border-b border-line bg-white/90 backdrop-blur-md transition-shadow duration-300" data-site-header>
+                <div class="container-page flex items-center justify-between gap-4 py-3.5">
+                    <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-3">
+                        <span class="flex size-11 items-center justify-center rounded-2xl bg-linear-to-br from-brand to-brand-strong text-white shadow-lg shadow-brand-strong/30">
+                            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M6.5 16.5A4 4 0 0 1 7 8.6a5.4 5.4 0 0 1 10.3 1 3.7 3.7 0 0 1 .2 6.9" />
+                                <path d="M4 16.5h15.5" />
+                                <path d="M15.5 5.2v-1" />
+                            </svg>
+                        </span>
+                        <span class="leading-tight">
+                            <span class="block text-lg font-extrabold text-ink">آسمان‌پوش</span>
+                            <span class="block text-[11px] font-medium text-muted">پوشاک مینیمال ایرانی</span>
+                        </span>
+                    </a>
+
+                    <nav class="hidden items-center gap-7 lg:flex" aria-label="ناوبری اصلی">
+                        @foreach ($navItems as $item)
+                            <a href="{{ $item['href'] }}" @class(['nav-link', 'text-accent hover:text-accent-deep' => $item['urgent'] ?? false]) @if ($item['current'] ?? false) aria-current="page" @endif>
+                                {{ $item['label'] }}
+                            </a>
+                        @endforeach
+                    </nav>
+
+                    <div class="flex items-center gap-2">
+                        <div class="relative hidden md:block">
+                            <svg class="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m20 20-3.5-3.5" />
+                            </svg>
+                            <input type="search" class="search-input w-56 lg:w-64" placeholder="جست‌وجوی محصول، رنگ یا سایز" aria-label="جست‌وجوی محصول">
+                        </div>
+
+                        @auth
+                            <a href="{{ route('profile.dashboard') }}" class="icon-button hidden sm:flex" aria-label="حساب کاربری" title="حساب کاربری">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="8" r="4" />
+                                    <path d="M4 21a8 8 0 0 1 16 0" />
+                                </svg>
+                            </a>
+                            <form method="POST" action="{{ route('auth.logout') }}" class="hidden sm:flex">
+                                @csrf
+                                <button type="submit" class="icon-button" aria-label="خروج" title="خروج">
+                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                        <path d="M16 17l5-5-5-5M21 12H9" />
+                                    </svg>
+                                </button>
+                            </form>
+                        @else
+                            <a href="{{ route('auth.login') }}" class="hidden items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-xs font-bold text-ink transition hover:border-brand hover:text-brand-deep sm:inline-flex">
+                                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="8" r="4" />
+                                    <path d="M4 21a8 8 0 0 1 16 0" />
+                                </svg>
+                                ورود / ثبت‌نام
+                            </a>
+                        @endauth
+
+                        <a href="#products" class="icon-button hidden sm:flex" aria-label="علاقه‌مندی‌ها">
+                            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20.8 4.9a5.2 5.2 0 0 0-7.4 0L12 6.3l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21l8.8-8.7a5.2 5.2 0 0 0 0-7.4Z" />
+                            </svg>
+                        </a>
+
+                        <button type="button" class="icon-button" aria-label="سبد خرید">
+                            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M6 8h12l-1 12H7L6 8Z" />
+                                <path d="M9 8a3 3 0 0 1 6 0" />
+                            </svg>
+                            <span class="absolute -top-1.5 -end-1.5 flex size-5 items-center justify-center rounded-full bg-accent text-[10px] font-extrabold text-white shadow-sm" data-cart-count data-count="3">۳</span>
+                        </button>
+
+                        <button type="button" class="icon-button lg:hidden" data-menu-toggle aria-expanded="false" aria-controls="mobile-menu" aria-label="منوی اصلی">
+                            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="M4 7h16M4 12h16M4 17h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="mobile-menu" class="hidden border-t border-line bg-white lg:hidden" data-menu-panel>
+                    <div class="container-page space-y-1 py-4">
+                        <div class="relative mb-3 md:hidden">
+                            <svg class="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m20 20-3.5-3.5" />
+                            </svg>
+                            <input type="search" class="search-input" placeholder="جست‌وجوی محصول، رنگ یا سایز" aria-label="جست‌وجوی محصول">
+                        </div>
+
+                        @foreach ($navItems as $item)
+                            <a href="{{ $item['href'] }}" @class([
+                                'block rounded-xl px-3 py-2.5 text-sm font-semibold transition',
+                                'bg-brand-soft text-brand-deep' => $item['current'] ?? false,
+                                'text-accent' => $item['urgent'] ?? false,
+                                'text-muted hover:bg-canvas hover:text-brand-deep' => ! ($item['current'] ?? false) && ! ($item['urgent'] ?? false),
+                            ])>
+                                {{ $item['label'] }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main id="main">
+            @yield('content')
+        </main>
+
+        <footer id="contact" class="mt-20 bg-ink text-slate-300">
+            <div class="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="space-y-4">
+                    <a href="{{ route('home') }}" class="flex items-center gap-3">
+                        <span class="flex size-11 items-center justify-center rounded-2xl bg-linear-to-br from-brand to-brand-strong text-white shadow-lg shadow-brand/20">
+                            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M6.5 16.5A4 4 0 0 1 7 8.6a5.4 5.4 0 0 1 10.3 1 3.7 3.7 0 0 1 .2 6.9" />
+                                <path d="M4 16.5h15.5" />
+                            </svg>
+                        </span>
+                        <span class="text-lg font-extrabold text-white">آسمان‌پوش</span>
+                    </a>
+                    <p class="text-sm leading-7 text-slate-400">
+                        پوشاک مینیمال با پارچه‌های نخی و رنگ‌های آرام؛ برای روزهایی که می‌خواهید راحت و شیک باشید.
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <a href="#" class="flex size-9 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-brand-strong" aria-label="اینستاگرام">
+                            <svg class="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="5" />
+                                <circle cx="12" cy="12" r="4" />
+                                <path d="M17.5 6.5h.01" />
+                            </svg>
+                        </a>
+                        <a href="#" class="flex size-9 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-brand-strong" aria-label="تلگرام">
+                            <svg class="size-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M21.5 4.3 2.9 11.5c-.8.3-.8 1.4 0 1.7l4.4 1.5 1.7 5.2c.2.7 1.1.8 1.6.3l2.4-2.4 4.4 3.2c.6.4 1.4.1 1.6-.6l3-14.9c.2-.9-.7-1.6-1.5-1.2Zm-2.9 3.4-7.9 6.9c-.2.2-.3.4-.3.7l-.2 2.4-1.2-3.6 9.1-6.6c.3-.2.7.1.5.2Z" />
+                            </svg>
+                        </a>
+                        <a href="#" class="flex size-9 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-brand-strong" aria-label="واتساپ">
+                            <svg class="size-4.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1a12 12 0 0 1-5.9-5.2c-.4-.7-.7-1.5-.6-2.2 0-.6.5-1.4 1-1.6.3-.1.6-.1.8 0l.9 1.6c.1.3 0 .5-.1.7l-.4.5c-.1.2-.2.3 0 .6.5.9 1.5 1.9 2.5 2.4.3.2.4.1.6-.1l.5-.6c.2-.2.4-.2.6-.1l1.6.8c.3.1.4.4.3.7Z" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="mb-4 text-sm font-extrabold text-white">فروشگاه</h2>
+                    <ul class="space-y-3 text-sm text-slate-400">
+                        <li><a href="{{ route('products.index') }}" class="transition hover:text-brand">همه محصولات</a></li>
+                        <li><a href="{{ route('home') }}#categories" class="transition hover:text-brand">دسته‌بندی‌ها</a></li>
+                        <li><a href="{{ route('home') }}#sale" class="font-bold text-accent transition hover:text-accent-deep">حراج پایان فصل</a></li>
+                        <li><a href="{{ route('products.index', ['sort' => 'newest']) }}" class="transition hover:text-brand">جدیدترین‌ها</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h2 class="mb-4 text-sm font-extrabold text-white">خدمات مشتریان</h2>
+                    <ul class="space-y-3 text-sm text-slate-400">
+                        <li><a href="#" class="transition hover:text-brand">پیگیری سفارش</a></li>
+                        <li><a href="#" class="transition hover:text-brand">راهنمای سایز</a></li>
+                        <li><a href="#" class="transition hover:text-brand">شرایط بازگشت کالا</a></li>
+                        <li><a href="#" class="transition hover:text-brand">سؤالات متداول</a></li>
+                    </ul>
+                </div>
+
+                <div class="space-y-4">
+                    <h2 class="text-sm font-extrabold text-white">تماس با ما</h2>
+                    <p class="text-sm leading-7 text-slate-400">
+                        تهران، خیابان ولیعصر، برج آسمان، طبقه سوم<br>
+                        شنبه تا پنجشنبه، ۹ صبح تا ۱۸
+                    </p>
+                    <div class="space-y-2 text-sm">
+                        <a href="tel:+982191002233" class="flex items-center gap-2 text-slate-300 transition hover:text-brand" dir="ltr">
+                            <span dir="rtl">۰۲۱-۹۱۰۰۲۲۳۳</span>
+                        </a>
+                        <a href="mailto:hello@asemanpoosh.ir" class="flex items-center gap-2 text-slate-300 transition hover:text-brand" dir="ltr">hello@asemanpoosh.ir</a>
+                    </div>
+                    <div class="flex flex-wrap gap-2 pt-1 text-[11px] font-semibold text-slate-300">
+                        <span class="rounded-lg border border-white/15 px-2.5 py-1.5">پرداخت امن</span>
+                        <span class="rounded-lg border border-white/15 px-2.5 py-1.5">ضمانت اصالت</span>
+                        <span class="rounded-lg border border-white/15 px-2.5 py-1.5">ارسال سراسری</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-white/10">
+                <div class="container-page flex flex-col items-center justify-between gap-3 py-5 text-xs text-slate-400 sm:flex-row">
+                    <p>© ۱۴۰۵ آسمان‌پوش — کلیه حقوق محفوظ است.</p>
+                    <p class="flex items-center gap-2">
+                        <span class="size-1.5 rounded-full bg-brand"></span>
+                        طراحی و اجرا با هویت رنگی آسمان و سفید
+                    </p>
+                </div>
+            </div>
+        </footer>
+
+        <div class="pointer-events-none fixed bottom-6 start-6 z-[60] translate-y-6 opacity-0 transition-all duration-300" data-toast role="status" aria-live="polite">
+            <div class="flex items-center gap-3 rounded-2xl border border-brand/30 bg-white px-4 py-3 shadow-xl shadow-sky-950/10">
+                <span class="flex size-9 items-center justify-center rounded-full bg-brand-soft text-brand-deep">
+                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m5 13 4 4L19 7" />
+                    </svg>
+                </span>
+                <p class="text-sm font-bold text-ink" data-toast-message>محصول به سبد خرید اضافه شد.</p>
+            </div>
+        </div>
+
+        @stack('scripts')
+    </body>
+</html>

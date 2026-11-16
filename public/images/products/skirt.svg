@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="دامن">
+    <defs>
+        <linearGradient id="skirtBody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#E0F2FE"/>
+            <stop offset="1" stop-color="#7DD3FC"/>
+        </linearGradient>
+    </defs>
+    <ellipse cx="200" cy="350" rx="104" ry="13" fill="#0EA5E9" opacity=".12"/>
+    <path d="M152 74h96l6 52 44 216H102L146 126Z" fill="url(#skirtBody)" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M148 126h104l8 32H140Z" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M200 158v184" stroke="#0284C7" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+    <path d="M168 158 146 342" stroke="#0284C7" stroke-width="4" stroke-linecap="round" opacity=".35"/>
+    <path d="M232 158 254 342" stroke="#0284C7" stroke-width="4" stroke-linecap="round" opacity=".35"/>
+    <path d="M102 342h196" stroke="#0EA5E9" stroke-width="6" stroke-linecap="round"/>
+</svg>

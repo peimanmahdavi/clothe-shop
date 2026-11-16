@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="مانتو">
+    <defs>
+        <linearGradient id="coatBody" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#BAE6FD"/>
+        </linearGradient>
+    </defs>
+    <ellipse cx="200" cy="360" rx="110" ry="13" fill="#0EA5E9" opacity=".12"/>
+    <path d="M150 66 104 88 88 250 84 356h232l-4-106-16-162-46-22Z" fill="url(#coatBody)" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M200 74 166 66l-12 52 46 74 46-74-12-52Z" fill="#E0F2FE" stroke="#0EA5E9" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M200 192v164" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+    <path d="M92 262h216v26H92Z" fill="#7DD3FC" stroke="#0EA5E9" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="200" cy="275" r="6" fill="#FFFFFF" stroke="#0EA5E9" stroke-width="4"/>
+    <circle cx="200" cy="222" r="5" fill="#0EA5E9"/>
+    <path d="M104 88l-6 34" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <path d="M296 88l6 34" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+</svg>

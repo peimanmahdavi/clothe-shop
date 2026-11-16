@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="کتانی">
+    <defs>
+        <linearGradient id="shoeBody" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#BAE6FD"/>
+        </linearGradient>
+    </defs>
+    <ellipse cx="200" cy="320" rx="140" ry="14" fill="#0EA5E9" opacity=".12"/>
+    <path d="M62 246c0-24 22-34 46-40l50-12c16-4 26-14 36-30 8-12 22-14 30-2l20 32c24 8 64 18 84 30 18 10 22 24 20 40l-2 12H66c-4-10-4-20-4-30Z" fill="url(#shoeBody)" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M64 276h270c4 8 4 16 2 24H68c-4-8-6-16-4-24Z" fill="#fff" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M62 300h276" stroke="#38BDF8" stroke-width="3" stroke-linecap="round" opacity=".6"/>
+    <path d="M150 196l28 26M168 186l30 28M188 178l28 26" stroke="#0EA5E9" stroke-width="5" stroke-linecap="round"/>
+    <path d="M124 246c34-12 78-6 112 10" fill="none" stroke="#38BDF8" stroke-width="6" stroke-linecap="round"/>
+    <path d="M252 214c14 6 26 14 34 24" stroke="#7DD3FC" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+</svg>

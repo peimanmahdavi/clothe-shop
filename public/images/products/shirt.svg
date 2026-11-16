@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="پیراهن">
+    <defs>
+        <linearGradient id="shirtBody" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#BAE6FD"/>
+        </linearGradient>
+    </defs>
+    <ellipse cx="200" cy="350" rx="98" ry="13" fill="#0EA5E9" opacity=".12"/>
+    <path d="M152 66 112 84 96 330h208L288 84l-40-18c-14 26-82 26-96 0Z" fill="url(#shirtBody)" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M152 66 200 118 248 66" fill="none" stroke="#0EA5E9" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M200 118v212" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+    <circle cx="200" cy="160" r="4.5" fill="#0EA5E9"/>
+    <circle cx="200" cy="200" r="4.5" fill="#0EA5E9"/>
+    <circle cx="200" cy="240" r="4.5" fill="#0EA5E9"/>
+    <circle cx="200" cy="280" r="4.5" fill="#0EA5E9"/>
+    <path d="M120 330h160" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <path d="M112 84l-8 30" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <path d="M288 84l8 30" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="تی‌شرت">
+    <defs>
+        <linearGradient id="teeBody" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#BAE6FD"/>
+        </linearGradient>
+    </defs>
+    <ellipse cx="200" cy="346" rx="104" ry="13" fill="#0EA5E9" opacity=".12"/>
+    <path d="M150 70 110 94 58 132l42 52 28-24v168h144V160l28 24 42-52-52-38-40-24c-10 34-80 34-90 0Z" fill="url(#teeBody)" stroke="#0EA5E9" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M150 70c10 34 90 34 100 0" fill="none" stroke="#0EA5E9" stroke-width="6" stroke-linecap="round"/>
+    <path d="M128 306h144" stroke="#38BDF8" stroke-width="5" stroke-linecap="round" opacity=".65"/>
+    <path d="M110 94l-14 30" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+    <path d="M290 94l14 30" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+</svg>
