@@ -205,7 +205,7 @@
         @apply relative flex size-10 items-center justify-center rounded-xl border border-line bg-white text-ink transition-all duration-200 hover:border-brand hover:bg-brand-soft hover:text-brand-deep;
     }
 
-    /* Admin panel */
+    /* AdminMiddleware panel */
     .admin-sidebar {
         @apply fixed inset-y-0 right-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col border-l border-line bg-white shadow-2xl shadow-sky-950/15 transition-transform duration-300 ease-out translate-x-full lg:translate-x-0 lg:shadow-none;
     }

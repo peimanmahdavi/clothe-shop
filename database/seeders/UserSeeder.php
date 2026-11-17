@@ -19,7 +19,7 @@ class UserSeeder extends Seeder
         $testPhone = env('TEST_USER_PHONE', '09123456789');
         $testPassword = env('TEST_USER_PASSWORD', 'password');
 
-        // Create Admin User
+        // Create AdminMiddleware User
         $admin = User::create([
             'name' => 'مدیر فروشگاه',
             'phone' => $adminPhone,
@@ -131,7 +131,7 @@ class UserSeeder extends Seeder
         }
 
         $this->command->info('Users seeded successfully!');
-        $this->command->info("Admin: {$adminPhone} / {$adminPassword}");
+        $this->command->info("AdminMiddleware: {$adminPhone} / {$adminPassword}");
         $this->command->info("Test User: {$testPhone} / {$testPassword}");
         $this->command->info('Debug OTP for all users: 123456');
     }

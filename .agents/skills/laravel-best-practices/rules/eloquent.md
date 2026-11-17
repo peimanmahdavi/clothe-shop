@@ -58,7 +58,7 @@ class PublishedScope implements Scope
     }
 }
 
-// Admin panels, reports, and jobs now omit drafts unless the scope is removed.
+// AdminMiddleware panels, reports, and jobs now omit drafts unless the scope is removed.
 ```
 
 Explicit local scope:
@@ -71,7 +71,7 @@ protected function published(Builder $query): Builder
 }
 
 Post::published()->paginate(); // Explicit
-Post::paginate(); // Admin sees all
+Post::paginate(); // AdminMiddleware sees all
 ```
 
 ## Define attribute casts

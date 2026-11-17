@@ -5,7 +5,10 @@ namespace App\Providers;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Services\CartService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -35,6 +38,12 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('layouts.app', function (\Illuminate\View\View $view): void {
             $view->with('cartCount', app(CartService::class)->count());
+        });
+
+        RateLimiter::for('global', function (Request $request) {
+            return $request->user()
+                ? Limit::perMinute(200)->by($request->user()->id)
+                : Limit::perMinute(60)->by($request->ip());
         });
     }
 }

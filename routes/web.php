@@ -14,6 +14,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+Route::middleware('throttle:global')->group(function (){
 Route::get('/', HomeController::class)->name('home');
 
 // Product catalog (public)
@@ -76,8 +77,8 @@ Route::middleware('auth')->prefix('profile')->name('profile.')->group(function (
     Route::delete('/security/password', [ProfileController::class, 'removePassword'])->name('security.password.remove');
 });
 
-// Admin routes
-Route::prefix('admin')->name('admin.')->group(function () {
+// AdminMiddleware routes
+Route::prefix('admin')->name('admin.')->middleware("admin")->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
 
     Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
@@ -104,4 +105,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('carts/{cart}/items/{item}', [\App\Http\Controllers\Admin\CartController::class, 'updateItem'])->name('carts.items.update');
     Route::delete('carts/{cart}/items/{item}', [\App\Http\Controllers\Admin\CartController::class, 'removeItem'])->name('carts.items.remove');
     Route::delete('carts/{cart}', [\App\Http\Controllers\Admin\CartController::class, 'clear'])->name('carts.clear');
+});
 });
