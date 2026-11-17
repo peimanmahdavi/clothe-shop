@@ -19,6 +19,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'phone',
     'shipping_phone',
     'total',
+    'subtotal',
+    'discount_code',
+    'discount_amount',
     'status',
     'size',
     'color',
@@ -49,6 +52,8 @@ class Order extends Model
     {
         return [
             'total' => 'integer',
+            'subtotal' => 'integer',
+            'discount_amount' => 'integer',
             'placed_at' => 'datetime',
         ];
     }
@@ -78,6 +83,14 @@ class Order extends Model
     }
 
     /**
+     * @return HasMany<OrderItem, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
      * @return HasMany<Transaction, $this>
      */
     public function transactions(): HasMany
@@ -95,6 +108,7 @@ class Order extends Model
         if ($this->shipping_first_name || $this->shipping_last_name) {
             return trim("{$this->shipping_first_name} {$this->shipping_last_name}");
         }
+
         return $this->customer_name;
     }
 

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\CartService;
 use App\Services\OtpService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,13 +17,14 @@ use Illuminate\Validation\Rules\Password;
 class PhoneAuthController extends Controller
 {
     public function __construct(
-        protected OtpService $otpService
+        protected OtpService $otpService,
+        protected CartService $cartService,
     ) {}
 
     /**
      * Show the login/register page (phone number input).
      */
-    public function showLogin(): \Illuminate\Contracts\View\View
+    public function showLogin(): View
     {
         return view('auth.login');
     }
@@ -67,6 +70,9 @@ class PhoneAuthController extends Controller
             $user = $result['user'];
             Auth::login($user, true); // Remember me
 
+            // Merge any guest cart (keyed by the pre-login session id) first.
+            $this->cartService->mergeGuestCartIntoUser($user->id);
+
             $request->session()->regenerate();
 
             return response()->json([
@@ -110,6 +116,10 @@ class PhoneAuthController extends Controller
         }
 
         Auth::login($user, true);
+
+        // Merge any guest cart (keyed by the pre-login session id) first.
+        $this->cartService->mergeGuestCartIntoUser($user->id);
+
         $request->session()->regenerate();
 
         return response()->json([

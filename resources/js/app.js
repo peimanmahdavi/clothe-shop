@@ -72,17 +72,46 @@ const initMobileMenu = () => {
         return;
     }
 
+    const drawer = panel.querySelector('[data-menu-drawer]');
+    const backdrop = panel.querySelector('[data-menu-backdrop]');
+    const closeEls = panel.querySelectorAll('[data-menu-close]');
+
+    let isOpen = false;
+
     const setOpen = (open) => {
+        isOpen = open;
         toggle.setAttribute('aria-expanded', String(open));
-        panel.classList.toggle('hidden', !open);
+        panel.setAttribute('aria-hidden', String(!open));
+        document.body.classList.toggle('overflow-hidden', open);
+
+        if (open) {
+            panel.classList.remove('hidden');
+            // Force reflow so the slide transition runs from off-screen.
+            void drawer?.offsetWidth;
+            drawer?.classList.remove('translate-x-full');
+        } else {
+            drawer?.classList.add('translate-x-full');
+            window.setTimeout(() => {
+                if (!isOpen) {
+                    panel.classList.add('hidden');
+                }
+            }, 300);
+        }
     };
 
-    toggle.addEventListener('click', () => {
-        setOpen(toggle.getAttribute('aria-expanded') !== 'true');
-    });
+    toggle.addEventListener('click', () => setOpen(true));
+
+    closeEls.forEach((el) => el.addEventListener('click', () => setOpen(false)));
+    backdrop?.addEventListener('click', () => setOpen(false));
 
     panel.querySelectorAll('a').forEach((link) => {
         link.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isOpen) {
+            setOpen(false);
+        }
     });
 };
 
@@ -120,17 +149,69 @@ const showToast = (message) => {
     }, 2600);
 };
 
-const initShopActions = () => {
-    document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const counter = document.querySelector('[data-cart-count]');
+const updateCartBadge = (count) => {
+    const counter = document.querySelector('[data-cart-count]');
 
-            if (counter) {
-                counter.textContent = toPersianDigits(Number(counter.dataset.count ?? 0) + 1);
-                counter.dataset.count = Number(counter.dataset.count ?? 0) + 1;
+    if (!counter) {
+        return;
+    }
+
+    const value = Number(count) || 0;
+    counter.textContent = toPersianDigits(value);
+    counter.dataset.count = String(value);
+    counter.classList.toggle('hidden', value === 0);
+};
+
+const initShopActions = () => {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+    document.querySelectorAll('[data-add-to-cart]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            if (button.dataset.busy === '1') {
+                return;
             }
 
-            showToast('محصول به سبد خرید اضافه شد.');
+            const productId = button.dataset.productId;
+
+            if (!productId) {
+                showToast('افزودن به سبد ممکن نشد.');
+
+                return;
+            }
+
+            button.dataset.busy = '1';
+
+            try {
+                const response = await fetch('/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf,
+                        Accept: 'application/json',
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        quantity: Number(button.dataset.quantity ?? 1),
+                        size: button.dataset.size ?? '',
+                        color: button.dataset.color ?? '',
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showToast(data.message ?? 'افزودن به سبد ناموفق بود.');
+
+                    return;
+                }
+
+                updateCartBadge(data.count);
+                showToast(data.message ?? 'محصول به سبد خرید اضافه شد.');
+            } catch (error) {
+                showToast('خطای شبکه. دوباره تلاش کنید.');
+            } finally {
+                button.dataset.busy = '0';
+            }
         });
     });
 

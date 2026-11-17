@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -64,6 +65,14 @@ class User extends Authenticatable
         return $this->hasMany(Transaction::class);
     }
 
+    /**
+     * @return HasOne<Cart, $this>
+     */
+    public function cart(): HasOne
+    {
+        return $this->hasOne(Cart::class);
+    }
+
     public function getDefaultAddress(): ?Address
     {
         return $this->addresses()->where('is_default', true)->first();
@@ -106,12 +115,13 @@ class User extends Authenticatable
         }
         $this->otp_expires_at = now()->addMinutes(5);
         $this->save();
+
         return $this->otp_code;
     }
 
     public function verifyOtp(string $otp): bool
     {
-        if (!$this->otp_code || !$this->otp_expires_at) {
+        if (! $this->otp_code || ! $this->otp_expires_at) {
             return false;
         }
 

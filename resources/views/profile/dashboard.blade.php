@@ -166,35 +166,48 @@
                         <a href="{{ route('home') }}" class="btn btn-primary mt-4 inline-flex">خرید محصول</a>
                     </div>
                 @else
-                    <div class="overflow-x-auto">
-                        <table class="w-full min-w-[600px] text-sm">
+                    <div>
+                        <table class="w-full text-sm">
                             <thead class="bg-canvas/70 text-[11px] text-muted">
                                 <tr>
-                                    <th class="px-5 py-3 text-start font-bold">شماره سفارش</th>
-                                    <th class="px-3 py-3 text-start font-bold">تاریخ</th>
+                                    <th class="px-4 py-3 text-start font-bold md:hidden">سفارش</th>
+                                    <th class="hidden px-5 py-3 text-start font-bold md:table-cell">شماره سفارش</th>
+                                    <th class="hidden px-3 py-3 text-start font-bold md:table-cell">تاریخ</th>
                                     <th class="px-3 py-3 text-start font-bold">مبلغ</th>
-                                    <th class="px-3 py-3 text-start font-bold">وضعیت</th>
-                                    <th class="px-5 py-3 text-end font-bold">عملیات</th>
+                                    <th class="hidden px-3 py-3 text-start font-bold md:table-cell">وضعیت</th>
+                                    <th class="px-4 py-3 text-end font-bold md:px-5">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-line">
                                 @foreach ($recentOrders as $order)
                                     <tr class="transition-colors hover:bg-canvas/60">
-                                        <td class="px-5 py-3">
+                                        @php
+                                            $statusClasses = [
+                                                'pending' => 'bg-amber-100 text-amber-700',
+                                                'processing' => 'bg-brand-soft text-brand-deep',
+                                                'shipped' => 'bg-blue-100 text-blue-700',
+                                                'completed' => 'bg-green-100 text-green-700',
+                                                'cancelled' => 'bg-red-100 text-red-700',
+                                            ];
+                                        @endphp
+                                        {{-- Mobile: Order & Date + compact status --}}
+                                        <td class="px-4 py-3 md:hidden">
+                                            <p class="font-mono text-[13px] font-bold text-ink" dir="ltr">#{{ $order->number }}</p>
+                                            <p class="mt-0.5 text-[11px] text-muted">{{ $toPersian($order->placed_at->format('Y/m/d')) }}</p>
+                                            <span class="status-pill mt-1.5 {{ $statusClasses[$order->status] ?? 'bg-canvas text-muted' }}">{{ $order->statusLabel() }}</span>
+                                        </td>
+                                        {{-- Desktop: Order number --}}
+                                        <td class="hidden px-5 py-3 md:table-cell">
                                             <p class="font-bold text-ink font-mono" dir="ltr">{{ $order->number }}</p>
                                         </td>
-                                        <td class="px-3 py-3 text-xs text-muted">{{ $toPersian($order->placed_at->format('Y/m/d')) }}</td>
-                                        <td class="px-3 py-3 font-bold text-ink">{{ $toPersian(number_format($order->total)) }} تومان</td>
+                                        {{-- Desktop: Date --}}
+                                        <td class="hidden px-3 py-3 text-xs text-muted md:table-cell">{{ $toPersian($order->placed_at->format('Y/m/d')) }}</td>
+                                        {{-- Amount (always visible) --}}
                                         <td class="px-3 py-3">
-                                            @php
-                                                $statusClasses = [
-                                                    'pending' => 'bg-amber-100 text-amber-700',
-                                                    'processing' => 'bg-brand-soft text-brand-deep',
-                                                    'shipped' => 'bg-blue-100 text-blue-700',
-                                                    'completed' => 'bg-green-100 text-green-700',
-                                                    'cancelled' => 'bg-red-100 text-red-700',
-                                                ];
-                                            @endphp
+                                            <p class="whitespace-nowrap font-bold text-ink">{{ $toPersian(number_format($order->total)) }} <span class="text-[10px] font-medium text-muted">تومان</span></p>
+                                        </td>
+                                        {{-- Desktop: Status --}}
+                                        <td class="hidden px-3 py-3 md:table-cell">
                                             <span class="status-pill {{ $statusClasses[$order->status] ?? 'bg-canvas text-muted' }}">
                                                 {{ $order->statusLabel() }}
                                             </span>

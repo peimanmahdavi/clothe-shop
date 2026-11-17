@@ -18,8 +18,19 @@ return new class extends Migration
             $table->boolean('is_admin')->default(false)->after('otp_expires_at');
             $table->string('first_name')->nullable()->after('name');
             $table->string('last_name')->nullable()->after('first_name');
-            $table->dropColumn('email');
         });
+
+        // SQLite (used by the test suite) refuses to drop a column that is
+        // still referenced by a unique index, so drop the index first.
+        if (Schema::hasColumn('users', 'email')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropUnique('users_email_unique');
+            });
+
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('email');
+            });
+        }
     }
 
     /**

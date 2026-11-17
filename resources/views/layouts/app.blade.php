@@ -18,12 +18,12 @@
 
         @php
             $navItems = [
-                ['label' => 'خانه', 'href' => route('home'), 'current' => request()->routeIs('home')],
-                ['label' => 'محصولات', 'href' => route('products.index'), 'current' => request()->routeIs('products.*')],
-                ['label' => 'پرفروش‌ها', 'href' => route('home') . '#products'],
-                ['label' => 'دسته‌بندی‌ها', 'href' => route('home') . '#categories'],
-                ['label' => 'حراج ویژه', 'href' => route('home') . '#sale', 'urgent' => true],
-                ['label' => 'تماس با ما', 'href' => route('home') . '#contact'],
+                ['label' => 'خانه', 'icon' => 'home', 'href' => route('home'), 'current' => request()->routeIs('home')],
+                ['label' => 'محصولات', 'icon' => 'tag', 'href' => route('products.index'), 'current' => request()->routeIs('products.*')],
+                ['label' => 'پرفروش‌ها', 'icon' => 'fire', 'href' => route('home') . '#products'],
+                ['label' => 'دسته‌بندی‌ها', 'icon' => 'layers', 'href' => route('home') . '#categories'],
+                ['label' => 'حراج ویژه', 'icon' => 'percent', 'href' => route('home') . '#sale', 'urgent' => true],
+                ['label' => 'تماس با ما', 'icon' => 'phone', 'href' => route('home') . '#contact'],
             ];
         @endphp
 
@@ -110,13 +110,22 @@
                             </svg>
                         </a>
 
-                        <button type="button" class="icon-button" aria-label="سبد خرید">
+                        @auth
+                            <a href="{{ route('profile.dashboard') }}" class="icon-button sm:hidden" aria-label="پنل کاربری" title="پنل کاربری">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="8" r="4" />
+                                    <path d="M4 21a8 8 0 0 1 16 0" />
+                                </svg>
+                            </a>
+                        @endauth
+
+                        <a href="{{ route('cart.index') }}" class="icon-button" aria-label="سبد خرید" title="سبد خرید">
                             <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M6 8h12l-1 12H7L6 8Z" />
                                 <path d="M9 8a3 3 0 0 1 6 0" />
                             </svg>
-                            <span class="absolute -top-1.5 -end-1.5 flex size-5 items-center justify-center rounded-full bg-accent text-[10px] font-extrabold text-white shadow-sm" data-cart-count data-count="3">۳</span>
-                        </button>
+                            <span class="absolute -top-1.5 -end-1.5 flex size-5 items-center justify-center rounded-full bg-accent text-[10px] font-extrabold text-white shadow-sm @if (($cartCount ?? 0) === 0) hidden @endif" data-cart-count data-count="{{ $cartCount ?? 0 }}">{{ strtr((string) ($cartCount ?? 0), ['0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴', '5' => '۵', '6' => '۶', '7' => '۷', '8' => '۸', '9' => '۹']) }}</span>
+                        </a>
 
                         <button type="button" class="icon-button lg:hidden" data-menu-toggle aria-expanded="false" aria-controls="mobile-menu" aria-label="منوی اصلی">
                             <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -126,9 +135,39 @@
                     </div>
                 </div>
 
-                <div id="mobile-menu" class="hidden border-t border-line bg-white lg:hidden" data-menu-panel>
-                    <div class="container-page space-y-1 py-4">
-                        <div class="relative mb-3 md:hidden">
+            </div>
+
+            {{-- Mobile slide-over drawer --}}
+            <div id="mobile-menu" class="fixed inset-0 z-50 hidden lg:hidden" data-menu-panel aria-hidden="true">
+                {{-- Backdrop --}}
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" data-menu-backdrop></div>
+
+                {{-- Panel (slides from the right in RTL) --}}
+                <aside class="absolute inset-y-0 end-0 flex h-full w-80 max-w-[85vw] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out"
+                    role="dialog" aria-modal="true" aria-label="منوی اصلی" data-menu-drawer>
+
+                    {{-- Header: logo right, close left --}}
+                    <div class="flex items-center justify-between gap-2 border-b border-line px-4 py-3.5">
+                        <a href="{{ route('home') }}" class="flex items-center gap-2.5">
+                            <span class="flex size-9 items-center justify-center rounded-xl bg-linear-to-br from-brand to-brand-strong text-white shadow-md shadow-brand-strong/30">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M6.5 16.5A4 4 0 0 1 7 8.6a5.4 5.4 0 0 1 10.3 1 3.7 3.7 0 0 1 .2 6.9" />
+                                    <path d="M4 16.5h15.5" />
+                                </svg>
+                            </span>
+                            <span class="text-base font-extrabold text-ink">آسمان‌پوش</span>
+                        </a>
+                        <button type="button" class="icon-button" data-menu-close aria-label="بستن منو">
+                            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="M6 6l12 12M18 6 6 18" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- Scrollable body --}}
+                    <div class="flex-1 overflow-y-auto px-4 py-4">
+                        {{-- Search --}}
+                        <div class="relative mb-4">
                             <svg class="pointer-events-none absolute inset-y-0 start-3.5 my-auto size-4.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                                 <circle cx="11" cy="11" r="7" />
                                 <path d="m20 20-3.5-3.5" />
@@ -136,18 +175,98 @@
                             <input type="search" class="search-input" placeholder="جست‌وجوی محصول، رنگ یا سایز" aria-label="جست‌وجوی محصول">
                         </div>
 
-                        @foreach ($navItems as $item)
-                            <a href="{{ $item['href'] }}" @class([
-                                'block rounded-xl px-3 py-2.5 text-sm font-semibold transition',
-                                'bg-brand-soft text-brand-deep' => $item['current'] ?? false,
-                                'text-accent' => $item['urgent'] ?? false,
-                                'text-muted hover:bg-canvas hover:text-brand-deep' => ! ($item['current'] ?? false) && ! ($item['urgent'] ?? false),
-                            ])>
-                                {{ $item['label'] }}
+                        {{-- Account card --}}
+                        @auth
+                            <div class="mb-4 rounded-2xl border border-brand/20 bg-brand-soft/50 p-3.5">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-strong text-base font-extrabold text-white shadow-md shadow-brand-strong/30">
+                                        {{ mb_substr(auth()->user()->getFullNameAttribute(), 0, 1) }}
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-extrabold text-ink">{{ auth()->user()->getFullNameAttribute() }}</p>
+                                        <p class="truncate text-xs text-muted" dir="ltr">{{ auth()->user()->phone }}</p>
+                                    </div>
+                                </div>
+
+                                <a href="{{ route('profile.dashboard') }}" class="btn btn-primary btn-sm mt-3 w-full">
+                                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+                                    پنل کاربری و سفارش‌ها
+                                </a>
+
+                                <div class="mt-2 grid grid-cols-2 gap-2">
+                                    <a href="{{ route('profile.orders') }}" class="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-2 py-2 text-[11px] font-bold text-ink transition hover:border-brand hover:text-brand-deep">
+                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8Z" /><path d="M9 8a3 3 0 0 1 6 0" /></svg>
+                                        سفارش‌های من
+                                    </a>
+                                    <a href="{{ route('products.index') }}" class="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-2 py-2 text-[11px] font-bold text-ink transition hover:border-brand hover:text-brand-deep">
+                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.9a5.2 5.2 0 0 0-7.4 0L12 6.3l-1.4-1.4a5.2 5.2 0 1 0-7.4 7.4L12 21l8.8-8.7a5.2 5.2 0 0 0 0-7.4Z" /></svg>
+                                        علاقه‌مندی‌ها
+                                    </a>
+                                </div>
+                            </div>
+                        @else
+                            <a href="{{ route('auth.login') }}" class="btn btn-primary mb-4 w-full">
+                                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+                                ورود / ثبت‌نام
                             </a>
-                        @endforeach
+                        @endauth
+
+                        {{-- Nav links --}}
+                        <nav class="space-y-1" aria-label="ناوبری موبایل">
+                            @foreach ($navItems as $item)
+                                <a href="{{ $item['href'] }}" @class([
+                                    'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition',
+                                    'bg-brand-soft text-brand-deep' => $item['current'] ?? false,
+                                    'text-accent hover:bg-accent-soft' => $item['urgent'] ?? false,
+                                    'text-ink hover:bg-canvas hover:text-brand-deep' => ! ($item['current'] ?? false) && ! ($item['urgent'] ?? false),
+                                ]) @if ($item['current'] ?? false) aria-current="page" @endif>
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-lg @if ($item['current'] ?? false) bg-white text-brand-deep @else bg-canvas text-muted @endif">
+                                        <svg class="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            @switch($item['icon'])
+                                                @case('home')
+                                                    <path d="m3 11 9-8 9 8" /><path d="M5 10v10h14V10" />
+                                                    @break
+                                                @case('tag')
+                                                    <path d="M3.5 12.6 12 21l8.5-8.5L12 4H4v8Z" /><circle cx="8.2" cy="8.2" r="1.4" />
+                                                    @break
+                                                @case('fire')
+                                                    <path d="M12 3c1 3-1.5 4.5-1.5 7A2.5 2.5 0 0 0 13 12c.5-1.5.5-2.5.5-2.5 1.5 1 3 3 3 5.5a4.5 4.5 0 0 1-9 0c0-4 2-6.5 4.5-12Z" />
+                                                    @break
+                                                @case('layers')
+                                                    <path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z" /><path d="m4 12 8 4.5 8-4.5" /><path d="m4 16.5 8 4.5 8-4.5" />
+                                                    @break
+                                                @case('percent')
+                                                    <path d="M19 5 5 19" /><circle cx="7" cy="7" r="2.4" /><circle cx="17" cy="17" r="2.4" />
+                                                    @break
+                                                @case('phone')
+                                                    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
+                                                    @break
+                                            @endswitch
+                                        </svg>
+                                    </span>
+                                    <span class="flex-1">{{ $item['label'] }}</span>
+                                    @if ($item['urgent'] ?? false)
+                                        <span class="badge-sale text-[10px]">تخفیف</span>
+                                    @endif
+                                    <svg class="size-4 shrink-0 text-muted/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6 9 12l6 6" /></svg>
+                                </a>
+                            @endforeach
+                        </nav>
                     </div>
-                </div>
+
+                    {{-- Sticky footer: logout --}}
+                    @auth
+                        <div class="border-t border-line p-4">
+                            <form method="POST" action="{{ route('auth.logout') }}">
+                                @csrf
+                                <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 transition hover:bg-red-100">
+                                    <svg class="size-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5M21 12H9" /></svg>
+                                    خروج از حساب
+                                </button>
+                            </form>
+                        </div>
+                    @endauth
+                </aside>
             </div>
         </header>
 

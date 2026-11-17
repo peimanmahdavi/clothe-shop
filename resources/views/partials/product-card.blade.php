@@ -107,7 +107,11 @@
 
         <button type="button"
             class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-soft px-3 py-2.5 text-xs font-extrabold text-brand-deep transition hover:bg-brand-strong hover:text-white disabled:pointer-events-none disabled:opacity-40"
-            data-add-to-cart @disabled($product->stock === 0)
+            data-add-to-cart
+            data-product-id="{{ $product->id }}"
+            data-size="{{ $product->sizes[0] ?? '' }}"
+            data-color="{{ $product->colors[0] ?? '' }}"
+            @disabled($product->stock === 0)
             aria-label="افزودن {{ $product->name }} به سبد خرید">
             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M6 8h12l-1 12H7L6 8Z" /><path d="M9 8a3 3 0 0 1 6 0" />

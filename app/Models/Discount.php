@@ -38,6 +38,23 @@ class Discount extends Model
             ->where(fn (Builder $query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()));
     }
 
+    /**
+     * Resolve an active, in-window discount by its code (case-insensitive).
+     */
+    public static function findByCode(?string $code): ?self
+    {
+        $code = trim((string) $code);
+
+        if ($code === '') {
+            return null;
+        }
+
+        return static::query()
+            ->running()
+            ->whereRaw('LOWER(code) = ?', [mb_strtolower($code)])
+            ->first();
+    }
+
     public function isExpired(): bool
     {
         return $this->ends_at !== null && $this->ends_at->isPast();

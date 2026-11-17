@@ -6,6 +6,8 @@ use App\Models\Address;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Transaction;
+use App\Services\CartService;
+use App\Services\DiscountService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +18,11 @@ use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        private readonly CartService $cartService,
+        private readonly DiscountService $discountService,
+    ) {}
+
     /**
      * Show user dashboard with orders summary.
      */
@@ -127,7 +134,7 @@ class ProfileController extends Controller
         ]);
 
         // If this is set as default, unset other defaults
-        if ($request->boolean('is_default') && !$address->is_default) {
+        if ($request->boolean('is_default') && ! $address->is_default) {
             $address->user->addresses()->where('is_default', true)->update(['is_default' => false]);
         }
 
@@ -218,50 +225,111 @@ class ProfileController extends Controller
     {
         $this->authorize('view', $order);
 
-        $order->load('address');
+        $order->load([
+            'address',
+            'items.product.images',
+            'transactions' => fn ($q) => $q->latest(),
+        ]);
 
         return view('profile.order-detail', [
             'user' => Auth::user(),
             'order' => $order,
+            'transaction' => $order->transactions->first(),
         ]);
     }
 
     /**
-     * Show the checkout / place-order page.
+     * Validate and remember a discount code for the current cart.
      */
-    public function checkout(Request $request): View
+    public function applyDiscount(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $cart = $this->cartService->resolve(false);
+        $cart?->load(['items.product']);
+
+        if (! $cart || $cart->items->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'سبد خرید شما خالی است.'], 422);
+        }
+
+        $subtotal = $cart->subtotal();
+        $resolved = $this->discountService->resolve($data['code'] ?? null, $cart->items, $subtotal);
+
+        if (! $resolved['discount']) {
+            $request->session()->forget('discount_code');
+
+            return response()->json([
+                'success' => false,
+                'message' => $resolved['message'] ?: 'کد تخفیف نامعتبر است.',
+                'discount_amount' => 0,
+                'total' => $subtotal,
+            ], 422);
+        }
+
+        $request->session()->put('discount_code', $resolved['discount']->code);
+
+        return response()->json([
+            'success' => true,
+            'message' => $resolved['message'],
+            'discount_amount' => $resolved['amount'],
+            'subtotal' => $subtotal,
+            'total' => max($subtotal - $resolved['amount'], 0),
+        ]);
+    }
+
+    /**
+     * Show the checkout / place-order page for the current cart.
+     */
+    public function checkout(Request $request): View|RedirectResponse
     {
         $user = Auth::user();
         $addresses = $user->addresses()->orderByDesc('is_default')->orderBy('created_at')->get();
 
-        $product = null;
-        if ($productId = $request->query('product_id')) {
-            $product = Product::with('images')->find($productId);
+        $cart = $this->cartService->resolve(false);
+        $cart?->load(['items.product.images', 'items.product.brand', 'items.product.category']);
+
+        $items = $cart?->items ?? collect();
+
+        if ($items->isEmpty()) {
+            return redirect()
+                ->route('cart.index')
+                ->withErrors(['cart' => 'سبد خرید شما خالی است.']);
         }
+
+        $subtotal = $cart->subtotal();
+
+        $discountCode = $request->query('discount_code')
+            ?? $request->session()->get('discount_code');
+
+        $resolved = $this->discountService->resolve($discountCode, $items, $subtotal);
+        $discountAmount = $resolved['amount'];
 
         return view('profile.checkout', [
             'user' => $user,
             'addresses' => $addresses,
             'defaultAddress' => $user->getDefaultAddress(),
-            'product' => $product,
-            'selectedSize' => $request->query('size'),
-            'selectedColor' => $request->query('color'),
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'discountCode' => $resolved['discount']?->code ?? $discountCode,
+            'discountAmount' => $discountAmount,
+            'discountMessage' => $resolved['message'],
+            'total' => max($subtotal - $discountAmount, 0),
         ]);
     }
 
     /**
-     * Store a new order for the authenticated user.
+     * Store a new order from the current cart for the authenticated user.
      */
     public function storeOrder(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'address_id' => ['required', 'integer'],
-            'product_id' => ['nullable', 'integer', 'exists:products,id'],
-            'size' => ['nullable', 'string', 'max:50'],
-            'color' => ['nullable', 'string', 'max:50'],
             'first_name' => ['nullable', 'string', 'max:50'],
             'last_name' => ['nullable', 'string', 'max:50'],
             'payment_method' => ['nullable', 'in:gateway,card_to_card'],
+            'discount_code' => ['nullable', 'string', 'max:100'],
         ]);
 
         $paymentMethod = $data['payment_method'] ?? 'gateway';
@@ -283,53 +351,99 @@ class ProfileController extends Controller
                 ->withInput();
         }
 
-        // Persist any provided profile data.
-        if (! empty($data['first_name'])) {
-            $user->first_name = $data['first_name'];
-        }
-        if (! empty($data['last_name'])) {
-            $user->last_name = $data['last_name'];
-        }
-        if ($user->isDirty(['first_name', 'last_name'])) {
-            $user->name = trim("{$user->first_name} {$user->last_name}");
-            $user->save();
+        $cart = $this->cartService->resolve(false);
+        $cart?->load(['items.product']);
+
+        if (! $cart || $cart->items->isEmpty()) {
+            return redirect()->route('cart.index')->withErrors(['cart' => 'سبد خرید شما خالی است.']);
         }
 
-        $product = ! empty($data['product_id']) ? Product::find($data['product_id']) : null;
+        // Validate stock once more under lock inside the transaction; here we
+        // just reject obviously empty/failed carts.
+        $subtotal = $cart->subtotal();
+        $resolved = $this->discountService->resolve($data['discount_code'] ?? null, $cart->items, $subtotal);
+        $discountAmount = $resolved['amount'];
+        $total = max($subtotal - $discountAmount, 0);
 
-        $order = DB::transaction(function () use ($user, $address, $product, $data, $isCardToCard) {
-            $order = Order::create([
-                'number' => 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6)),
-                'user_id' => $user->id,
-                'product_id' => $product?->id,
-                'address_id' => $address->id,
-                'customer_name' => $user->getFullNameAttribute(),
-                'shipping_first_name' => $user->first_name,
-                'shipping_last_name' => $user->last_name,
-                'phone' => $user->phone,
-                'shipping_phone' => $address->phone,
-                'size' => $data['size'] ?? null,
-                'color' => $data['color'] ?? null,
-                'total' => $product?->finalPrice() ?? 0,
-                'status' => $isCardToCard ? 'pending_transaction' : 'pending',
-                'placed_at' => now(),
-            ]);
+        try {
+            $order = DB::transaction(function () use ($user, $address, $cart, $data, $isCardToCard, $subtotal, $total, $resolved, $discountAmount) {
+                // Re-check stock under lock to avoid overselling at checkout.
+                foreach ($cart->items as $item) {
+                    $product = Product::whereKey($item->product_id)->lockForUpdate()->first();
 
-            Transaction::create([
-                'order_id' => $order->id,
-                'user_id' => $user->id,
-                'amount' => $order->total,
-                'gateway' => $isCardToCard ? 'card' : 'zarinpal',
-                'payment_method' => $isCardToCard ? 'card_to_card' : 'gateway',
-                'tracking_code' => $isCardToCard ? null : Transaction::generateTrackingCode(),
-                'status' => 'pending',
-                'description' => $isCardToCard
-                    ? 'در انتظار ثبت فیش کارت به کارت.'
-                    : 'در انتظار پرداخت توسط کاربر.',
-            ]);
+                    if (! $product || $item->quantity > $product->stock) {
+                        throw new \RuntimeException('موجودی یکی از کالاها کافی نیست: '.($product?->name ?? 'نامشخص'));
+                    }
+                }
 
-            return $order;
-        });
+                // Persist any provided profile data.
+                if (! empty($data['first_name'])) {
+                    $user->first_name = $data['first_name'];
+                }
+                if (! empty($data['last_name'])) {
+                    $user->last_name = $data['last_name'];
+                }
+                if ($user->isDirty(['first_name', 'last_name'])) {
+                    $user->name = trim("{$user->first_name} {$user->last_name}");
+                    $user->save();
+                }
+
+                $firstItem = $cart->items->first();
+
+                $order = Order::create([
+                    'number' => 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
+                    'user_id' => $user->id,
+                    'product_id' => $cart->items->count() === 1 ? $firstItem->product_id : null,
+                    'address_id' => $address->id,
+                    'customer_name' => $user->getFullNameAttribute(),
+                    'shipping_first_name' => $user->first_name,
+                    'shipping_last_name' => $user->last_name,
+                    'phone' => $user->phone,
+                    'shipping_phone' => $address->phone,
+                    'size' => $cart->items->count() === 1 ? ($firstItem->size ?: null) : null,
+                    'color' => $cart->items->count() === 1 ? ($firstItem->color ?: null) : null,
+                    'subtotal' => $subtotal,
+                    'discount_code' => $resolved['discount']?->code,
+                    'discount_amount' => $discountAmount,
+                    'total' => $total,
+                    'status' => $isCardToCard ? 'pending_transaction' : 'pending',
+                    'placed_at' => now(),
+                ]);
+
+                foreach ($cart->items as $item) {
+                    $order->items()->create([
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product?->name ?? 'نامشخص',
+                        'size' => $item->size ?: null,
+                        'color' => $item->color ?: null,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                        'line_total' => $item->unit_price * $item->quantity,
+                    ]);
+                }
+
+                Transaction::create([
+                    'order_id' => $order->id,
+                    'user_id' => $user->id,
+                    'amount' => $order->total,
+                    'gateway' => $isCardToCard ? 'card' : 'zarinpal',
+                    'payment_method' => $isCardToCard ? 'card_to_card' : 'gateway',
+                    'tracking_code' => $isCardToCard ? null : Transaction::generateTrackingCode(),
+                    'status' => 'pending',
+                    'description' => $isCardToCard
+                        ? 'در انتظار ثبت فیش کارت به کارت.'
+                        : 'در انتظار پرداخت توسط کاربر.',
+                ]);
+
+                return $order;
+            }, 3);
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['cart' => $e->getMessage()])->withInput();
+        }
+
+        // Cart is consumed; empty it now that the order exists.
+        $this->cartService->clear();
+        $request->session()->forget('discount_code');
 
         if ($isCardToCard) {
             return redirect()
@@ -531,7 +645,7 @@ class ProfileController extends Controller
         ]);
 
         $user = Auth::user();
-        
+
         // Check if phone is already taken by another user
         if ($request->phone !== $user->phone) {
             $exists = User::where('phone', $request->phone)->where('id', '!=', $user->id)->exists();

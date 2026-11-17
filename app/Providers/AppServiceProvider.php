@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use App\Models\Discount;
 use App\Models\Order;
-use App\Support\Jalali;
+use App\Services\CartService;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.admin', function (\Illuminate\View\View $view): void {
             $view->with('pendingOrdersCount', Order::query()->where('status', 'pending')->count());
             $view->with('activeCampaign', Discount::query()->running()->orderBy('ends_at')->first());
+        });
+
+        View::composer('layouts.app', function (\Illuminate\View\View $view): void {
+            $view->with('cartCount', app(CartService::class)->count());
         });
     }
 }

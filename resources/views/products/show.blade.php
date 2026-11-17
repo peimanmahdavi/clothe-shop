@@ -105,8 +105,10 @@
                             @endif
                         </div>
 
-                        <form method="GET" action="{{ route('profile.checkout') }}" class="mt-5 space-y-4">
+                        <form method="POST" action="{{ route('cart.add') }}" class="mt-5 space-y-4">
+                            @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
+                            <input type="hidden" name="quantity" value="1">
 
                             @if (!empty($product->sizes))
                                 <div>
@@ -137,10 +139,13 @@
                             @endif
 
                             <div class="flex flex-col gap-2 pt-1 sm:flex-row">
-                                <button type="submit" class="btn btn-primary flex-1 @if ($product->stock === 0) pointer-events-none opacity-50 @endif">
-                                    ثبت سفارش
+                                <button type="submit" name="checkout" value="1" class="btn btn-primary flex-1 @if ($product->stock === 0) pointer-events-none opacity-50 @endif">
+                                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l-1 12H7L6 8Z" /><path d="M9 8a3 3 0 0 1 6 0" /></svg>
+                                    افزودن و ثبت سفارش
                                 </button>
-                                <a href="{{ route('products.index') }}" class="btn btn-outline flex-1">بازگشت به محصولات</a>
+                                <button type="submit" class="btn btn-outline flex-1 @if ($product->stock === 0) pointer-events-none opacity-50 @endif">
+                                    افزودن به سبد
+                                </button>
                             </div>
                         </form>
                     </div>

@@ -24,6 +24,7 @@
                     'items' => [
                         ['label' => 'داشبورد', 'icon' => 'grid', 'url' => route('admin.dashboard'), 'match' => 'admin.dashboard'],
                         ['label' => 'سفارش‌ها', 'icon' => 'bag', 'url' => route('admin.orders.index'), 'match' => 'admin.orders.*', 'badge' => 'orders'],
+                        ['label' => 'سبدهای خرید', 'icon' => 'bag', 'url' => route('admin.carts.index'), 'match' => 'admin.carts.*'],
                         ['label' => 'تراکنش‌ها', 'icon' => 'receipt', 'url' => route('admin.transactions.index'), 'match' => 'admin.transactions.*'],
                         ['label' => 'محصولات', 'icon' => 'tag', 'url' => route('admin.products.index'), 'match' => 'admin.products.*'],
                         ['label' => 'دسته‌بندی‌ها', 'icon' => 'layers', 'url' => route('admin.categories.index'), 'match' => 'admin.categories.*'],
