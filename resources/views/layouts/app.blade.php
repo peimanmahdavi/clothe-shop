@@ -85,6 +85,17 @@
                                     <path d="M4 21a8 8 0 0 1 16 0" />
                                 </svg>
                             </a>
+                            @if (auth()->user()->is_admin)
+                                <a href="{{ route('admin.dashboard') }}" class="hidden sm:flex items-center gap-2 rounded-full bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-slate-800" aria-label="پنل مدیریت">
+                                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                                    </svg>
+                                    پنل مدیریت
+                                </a>
+                            @endif
                             <form method="POST" action="{{ route('auth.logout') }}" class="hidden sm:flex">
                                 @csrf
                                 <button type="submit" class="icon-button" aria-label="خروج" title="خروج">
@@ -192,6 +203,12 @@
                                     <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
                                     پنل کاربری و سفارش‌ها
                                 </a>
+                                @if (auth()->user()->is_admin)
+                                    <a href="{{ route('admin.dashboard') }}" class="btn btn-primary btn-sm mt-2 w-full">
+                                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+                                        ورود به پنل مدیریت
+                                    </a>
+                                @endif
 
                                 <div class="mt-2 grid grid-cols-2 gap-2">
                                     <a href="{{ route('profile.orders') }}" class="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-2 py-2 text-[11px] font-bold text-ink transition hover:border-brand hover:text-brand-deep">

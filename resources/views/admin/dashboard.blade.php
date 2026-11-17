@@ -164,8 +164,8 @@
                 <span class="rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-extrabold text-brand-deep">{{ $toman((int) $chartTotals->sum()) }} تومان</span>
             </div>
 
-            <div class="mt-4 overflow-x-auto">
-                <svg viewBox="0 0 640 220" class="h-52 w-full min-w-[420px] sm:h-56" role="img" aria-label="نمودار فروش ۱۲ روز گذشته">
+            <div class="relative mt-4 w-full max-w-full overflow-hidden">
+                <svg viewBox="0 0 640 220" class="h-52 w-full sm:h-56" role="img" aria-label="نمودار فروش ۱۲ روز گذشته">
                     <defs>
                         <linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0" stop-color="#38BDF8" stop-opacity="0.38" />

@@ -263,6 +263,7 @@ const initAdminSidebar = () => {
     const setOpen = (open) => {
         sidebar.dataset.open = String(open);
         overlay?.classList.toggle('hidden', !open);
+        document.body.classList.toggle('overflow-hidden', open);
         toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(open)));
     };
 

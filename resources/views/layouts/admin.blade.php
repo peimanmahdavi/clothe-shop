@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl" class="scroll-pt-28">
+<html lang="fa" dir="rtl" class="scroll-pt-28 max-w-full overflow-x-clip">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="theme-color" content="#0ea5e9">
         <meta name="robots" content="noindex">
 
@@ -11,7 +11,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-canvas">
+    <body class="min-h-screen max-w-full overflow-x-clip bg-canvas">
         @php
             $toPersian = static fn (string|int $value): string => strtr((string) $value, [
                 '0' => '۰', '1' => '۱', '2' => '۲', '3' => '۳', '4' => '۴',
@@ -42,10 +42,10 @@
             ];
         @endphp
 
-        <div class="fixed inset-0 z-40 hidden bg-ink/40 backdrop-blur-sm lg:hidden" data-admin-overlay aria-hidden="true"></div>
+        <div class="fixed inset-0 z-40 hidden bg-slate-900/50 backdrop-blur-xs lg:hidden" data-admin-overlay aria-hidden="true"></div>
 
         <aside id="admin-sidebar" class="admin-sidebar" data-admin-sidebar data-open="false" aria-label="ناوبری پنل مدیریت">
-            <div class="flex items-center justify-between gap-2 border-b border-line px-5 py-4">
+            <div class="shrink-0 flex items-center justify-between gap-2 border-b border-line px-5 py-4">
                 <a href="{{ route('home') }}" class="flex items-center gap-2.5">
                     <span class="flex size-10 items-center justify-center rounded-xl bg-linear-to-br from-brand to-brand-strong text-white shadow-lg shadow-brand-strong/25">
                         <svg class="size-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -66,7 +66,7 @@
                 </button>
             </div>
 
-            <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+            <nav class="flex-1 min-h-0 overflow-y-auto space-y-6 px-3 py-2">
                 @foreach ($adminNav as $group)
                     <div>
                         <p class="px-3 pb-2 text-[10px] font-bold text-muted/80">{{ $group['group'] }}</p>
@@ -139,26 +139,26 @@
                 @endforeach
             </nav>
 
-            <div class="space-y-3 border-t border-line p-3">
-                <div class="relative overflow-hidden rounded-xl border border-red-100 bg-accent-soft p-3.5">
-                    <div class="pointer-events-none absolute -end-6 -top-6 size-16 rounded-full bg-accent/10" aria-hidden="true"></div>
+            <div class="shrink-0 space-y-3 border-t border-slate-100 p-3">
+                <div class="relative overflow-hidden rounded-xl border border-red-100 bg-accent-soft p-3.5 admin-campaign-card">
+                    <div class="pointer-events-none absolute -end-6 -top-6 size-16 rounded-full bg-accent/10 campaign-card-blob" aria-hidden="true"></div>
                     <div class="relative flex items-center gap-2">
                         <span class="flex size-7 items-center justify-center rounded-lg bg-accent text-white shadow-sm shadow-accent/30">
                             <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z" />
                             </svg>
                         </span>
-                        <p class="text-xs font-extrabold text-ink">{{ $activeCampaign?->title ?? 'جشنواره‌ای فعال نیست' }}</p>
+                        <p class="campaign-card-title text-xs font-extrabold text-ink">{{ $activeCampaign?->title ?? 'جشنواره‌ای فعال نیست' }}</p>
                     </div>
                     @if ($activeCampaign)
-                        <p class="relative mt-2 text-[11px] leading-5 text-muted">
+                        <p class="campaign-card-days relative mt-2 text-[11px] leading-5 text-muted">
                             {{ $toPersian($activeCampaign->percentage) }}٪ تخفیف تا
-                            {{ $activeCampaign->ends_at ? $toPersian($activeCampaign->ends_at->diffInDays(now()) + 1).' روز دیگر' : 'اطلاع نشده' }}
+                            {{ $activeCampaign->ends_at ? $toPersian(max(0, $activeCampaign->ends_at->diffInDays(now()) + 1)).' روز دیگر' : 'اطلاع نشده' }}
                         </p>
                     @else
                         <p class="relative mt-2 text-[11px] leading-5 text-muted">برای دیده شدن در فروشگاه یک جشنواره فعال بسازید.</p>
                     @endif
-                    <a href="{{ route('admin.discounts.index') }}" class="relative mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-accent transition hover:text-accent-deep">
+                    <a href="{{ route('admin.discounts.index') }}" class="campaign-card-link relative mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-accent transition hover:text-accent-deep">
                         مدیریت جشنواره
                         <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -183,8 +183,8 @@
             </div>
         </aside>
 
-        <div class="lg:ps-72">
-            <header class="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur-md">
+        <div class="min-w-0 max-w-full overflow-x-clip lg:ps-72">
+            <header class="sticky top-0 z-30 w-full max-w-full border-b border-line bg-white/90 backdrop-blur-md">
                 <div class="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
                     <button type="button" class="icon-button lg:hidden" data-admin-menu-toggle aria-expanded="false" aria-controls="admin-sidebar" aria-label="باز کردن منو">
                         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -237,7 +237,7 @@
                 </div>
             </header>
 
-            <main class="px-4 py-6 sm:px-6 lg:px-8">
+            <main class="min-w-0 max-w-full overflow-x-clip px-4 py-6 sm:px-6 lg:px-8">
                 @if (session('status'))
                     <div class="mb-4 flex items-center gap-2 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 text-xs font-bold text-brand-deep">
                         <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

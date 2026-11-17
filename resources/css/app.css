@@ -25,6 +25,9 @@
     --color-accent-deep: #dc2626;
     --color-accent-soft: #fef2f2;
 
+    /* Blur */
+    --blur-xs: 4px;
+
     --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 18px 40px -28px rgb(15 23 42 / 0.25);
     --shadow-card-hover: 0 2px 6px rgb(15 23 42 / 0.05), 0 32px 60px -32px rgb(14 165 233 / 0.45);
     --shadow-glow: 0 30px 70px -40px rgb(14 165 233 / 0.65);
@@ -204,11 +207,34 @@
 
     /* Admin panel */
     .admin-sidebar {
-        @apply fixed inset-y-0 start-0 z-50 flex w-72 translate-x-full flex-col border-e border-line bg-white shadow-2xl shadow-sky-950/15 transition-transform duration-300 ease-out lg:translate-x-0 lg:shadow-none;
+        @apply fixed inset-y-0 right-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col border-l border-line bg-white shadow-2xl shadow-sky-950/15 transition-transform duration-300 ease-out translate-x-full lg:translate-x-0 lg:shadow-none;
     }
 
+    /* Opaque drawer must always paint above the blurred backdrop (z-40). */
     .admin-sidebar[data-open='true'] {
         @apply translate-x-0;
+    }
+
+    @media (max-height: 720px) {
+        .admin-campaign-card {
+            @apply p-2;
+        }
+
+        .campaign-card-blob {
+            display: none;
+        }
+
+        .campaign-card-title {
+            @apply text-[10px];
+        }
+
+        .campaign-card-days {
+            @apply text-[10px] mt-1;
+        }
+
+        .campaign-card-link {
+            @apply mt-1 text-[10px];
+        }
     }
 
     .admin-nav-link {
