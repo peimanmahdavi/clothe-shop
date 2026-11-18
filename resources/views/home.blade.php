@@ -237,7 +237,7 @@
     {{-- Limited time sale with countdown --}}
     <section id="sale" class="pt-14 sm:pt-16">
         <div class="container-page">
-            <div class="relative overflow-hidden rounded-[2rem] border border-red-100 bg-accent-soft p-6 sm:p-10">
+            <div class="relative w-full max-w-full overflow-hidden rounded-[2rem] border border-red-100 bg-accent-soft p-4 sm:p-8 lg:p-10">
                 <div class="pointer-events-none absolute inset-0" aria-hidden="true">
                     <div class="absolute -start-16 -top-16 size-56 rounded-full border-[24px] border-white/60"></div>
                     <div class="absolute -bottom-20 end-1/4 size-48 rounded-full bg-accent/10 blur-2xl"></div>
@@ -258,11 +258,11 @@
                             <span class="text-accent">تا {{ $toPersian($campaignPercentage) }}٪ تخفیف</span>
                         </h2>
 
-                        <p class="mt-3 max-w-md text-sm leading-7 text-muted">
+                        <p class="mt-3 w-full max-w-full break-words whitespace-normal text-sm leading-7 text-muted sm:max-w-md">
                             {{ $activeDiscount?->description ?? 'روی منتخبی از محصولات کالکشن پاییز. قیمت‌ها پس از پایان جشنواره به حالت قبل برمی‌گردند؛ تا موجودی هست، بخرید.' }}
                         </p>
 
-                        <div class="mt-6 flex flex-wrap items-center gap-3">
+                        <div class="mt-6 flex w-full flex-wrap items-center gap-3">
                             <a href="#products" class="btn btn-accent">
                                 مشاهده محصولات حراج
                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -282,7 +282,7 @@
                             <span class="text-accent">{{ $activeDiscount?->ends_at ? 'پایان زمان اعلام‌شده' : 'آخرین لحظه ماه' }}</span>
                         </p>
 
-                        <div class="mt-4 flex items-center justify-center gap-1.5 sm:gap-2.5" data-countdown data-deadline="{{ $activeDiscount?->ends_at?->toIso8601String() }}">
+                        <div dir="ltr" class="mt-4 grid w-full max-w-full grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] items-center gap-1 sm:gap-2.5" data-countdown data-deadline="{{ $activeDiscount?->ends_at?->toIso8601String() }}">
                             <div class="countdown-cell">
                                 <span class="countdown-value" data-unit="days">۰۰</span>
                                 <span class="countdown-label">روز</span>
@@ -305,9 +305,9 @@
                         </div>
 
                         <div class="mt-6">
-                            <div class="flex items-center justify-between text-[11px] font-semibold">
+                            <div class="flex w-full items-center justify-between gap-2 text-xs font-semibold">
                                 <span class="text-muted">ظرفیت جشنواره</span>
-                                <span class="text-accent">۷۸٪ تکمیل شده</span>
+                                <span class="shrink-0 text-accent">۷۸٪ تکمیل شده</span>
                             </div>
                             <div class="mt-2 h-2 overflow-hidden rounded-full bg-red-100">
                                 <div class="h-full w-[78%] rounded-full bg-linear-to-l from-accent to-accent-deep"></div>

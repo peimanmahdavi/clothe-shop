@@ -82,6 +82,15 @@
         scroll-behavior: smooth;
     }
 
+    html {
+        @apply max-w-full overflow-x-hidden;
+    }
+
+    /* clip (unlike hidden) does not create a scroll container, so the sticky header keeps working */
+    body {
+        @apply max-w-full overflow-x-clip;
+    }
+
     body {
         @apply bg-canvas font-sans text-ink antialiased;
     }
@@ -315,19 +324,19 @@
 
     /* Countdown */
     .countdown-cell {
-        @apply flex min-w-[4.25rem] flex-col items-center gap-1 rounded-2xl border border-red-100 bg-white px-3 py-3 shadow-sm;
+        @apply flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl border border-red-100 bg-white px-1 py-2.5 shadow-sm sm:min-w-[4.25rem] sm:flex-none sm:gap-1 sm:px-3 sm:py-3;
     }
 
     .countdown-value {
-        @apply text-2xl font-extrabold tabular-nums text-accent sm:text-3xl;
+        @apply text-xl font-extrabold tabular-nums text-accent sm:text-3xl;
     }
 
     .countdown-label {
-        @apply text-[11px] font-medium text-muted;
+        @apply text-[11px] font-medium text-muted sm:text-xs;
     }
 
     .countdown-separator {
-        @apply text-xl font-extrabold text-accent/60 sm:text-2xl;
+        @apply shrink-0 text-lg font-extrabold text-accent/60 sm:text-2xl;
     }
 
     .header-shadow {

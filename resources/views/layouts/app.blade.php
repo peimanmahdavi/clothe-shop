@@ -29,8 +29,8 @@
 
         <header class="sticky top-0 z-50 w-full">
             <div class="border-b border-red-100 bg-accent-soft">
-                <div class="container-page flex items-center justify-between gap-3 py-2">
-                    <p class="flex min-w-0 items-center gap-2 text-xs font-semibold text-accent sm:text-sm">
+                <div class="container-page flex w-full max-w-full items-center justify-center gap-3 px-3 py-2 sm:justify-between">
+                    <p class="flex min-w-0 max-w-full items-center gap-2 text-center text-xs font-semibold text-accent sm:text-sm">
                         <span class="relative flex size-2 shrink-0 rounded-full bg-accent">
                             <span class="absolute inline-flex size-full animate-ping rounded-full bg-accent/70"></span>
                         </span>
@@ -287,7 +287,7 @@
             </div>
         </header>
 
-        <main id="main">
+        <main id="main" class="w-full max-w-full overflow-x-hidden">
             @yield('content')
         </main>
 
