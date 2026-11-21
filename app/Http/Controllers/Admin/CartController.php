@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AddCartItemRequest;
+use App\Http\Requests\Admin\UpdateCartItemRequest;
 use App\Models\Cart;
 use App\Models\Product;
 use App\Services\CartService;
@@ -46,7 +48,7 @@ class CartController extends Controller
     /**
      * Edit a single cart: view, add, update quantities, remove lines.
      */
-    public function show(Request $request, Cart $cart): View
+    public function show(Cart $cart): View
     {
         $cart->load(['user', 'items.product.images']);
 
@@ -64,14 +66,9 @@ class CartController extends Controller
     /**
      * Add a product to a customer's cart.
      */
-    public function addItem(Request $request, Cart $cart): RedirectResponse
+    public function addItem(AddCartItemRequest $request, Cart $cart): RedirectResponse
     {
-        $data = $request->validate([
-            'product_id' => ['required', 'integer', 'exists:products,id'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:99'],
-            'size' => ['nullable', 'string', 'max:50'],
-            'color' => ['nullable', 'string', 'max:50'],
-        ]);
+        $data = $request->validated();
 
         $product = Product::findOrFail($data['product_id']);
 
@@ -95,17 +92,15 @@ class CartController extends Controller
     /**
      * Update the quantity of a line item.
      */
-    public function updateItem(Request $request, Cart $cart, int $item): RedirectResponse
+    public function updateItem(UpdateCartItemRequest $request, Cart $cart, int $item): RedirectResponse
     {
-        $data = $request->validate([
-            'quantity' => ['required', 'integer', 'min:0', 'max:99'],
-        ]);
+        $data = $request->validated();
 
         $this->cartService->setItemQuantity($cart, $item, (int) $data['quantity']);
 
         return redirect()
             ->route('admin.carts.show', $cart)
-            ->with('status', 'تعداد کالا به‌روزرسانی شد.');
+            ->with('status', 'تعداد کالا بهروزرسانی شد.');
     }
 
     /**

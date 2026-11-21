@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AddToCartRequest;
+use App\Http\Requests\UpdateCartItemRequest;
 use App\Models\Product;
 use App\Services\CartService;
 use Illuminate\Contracts\View\View;
@@ -26,15 +28,9 @@ class CartController extends Controller
         ]);
     }
 
-    public function add(Request $request): JsonResponse|RedirectResponse
+    public function add(AddToCartRequest $request): JsonResponse|RedirectResponse
     {
-        $data = $request->validate([
-            'product_id' => ['required', 'integer', 'exists:products,id'],
-            'quantity' => ['nullable', 'integer', 'min:1', 'max:99'],
-            'size' => ['nullable', 'string', 'max:50'],
-            'color' => ['nullable', 'string', 'max:50'],
-        ]);
-
+        $data = $request->validated();
         $product = Product::findOrFail($data['product_id']);
 
         try {
@@ -69,11 +65,9 @@ class CartController extends Controller
         return back()->with('status', 'محصول به سبد خرید اضافه شد.');
     }
 
-    public function update(Request $request, int $item): JsonResponse|RedirectResponse
+    public function update(UpdateCartItemRequest $request, int $item): JsonResponse|RedirectResponse
     {
-        $data = $request->validate([
-            'quantity' => ['required', 'integer', 'min:0', 'max:99'],
-        ]);
+        $data = $request->validated();
 
         $this->cart->updateQuantity($item, (int) $data['quantity']);
         $cart = $this->cart->resolve(false);

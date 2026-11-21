@@ -24,11 +24,12 @@ class UserSeeder extends Seeder
             'name' => 'مدیر فروشگاه',
             'phone' => $adminPhone,
             'password' => Hash::make($adminPassword),
-            'is_admin' => true,
             'first_name' => 'مدیر',
             'last_name' => 'فروشگاه',
             'email_verified_at' => now(),
         ]);
+        // Privileged flags are not mass-assignable by design.
+        $admin->forceFill(['is_admin' => true, 'is_active' => true])->save();
 
         // Create default address for admin
         Address::create([
@@ -49,11 +50,11 @@ class UserSeeder extends Seeder
             'name' => 'علی احمدی',
             'phone' => $testPhone,
             'password' => Hash::make($testPassword),
-            'is_admin' => false,
             'first_name' => 'علی',
             'last_name' => 'احمدی',
             'email_verified_at' => now(),
         ]);
+        $user->forceFill(['is_admin' => false, 'is_active' => true])->save();
 
         // Create addresses for regular user
         Address::create([
@@ -109,11 +110,11 @@ class UserSeeder extends Seeder
                 'name' => $testUser['name'],
                 'phone' => $testUser['phone'],
                 'password' => Hash::make('password'),
-                'is_admin' => false,
                 'first_name' => $testUser['first_name'],
                 'last_name' => $testUser['last_name'],
                 'email_verified_at' => now(),
             ]);
+            $createdUser->forceFill(['is_admin' => false, 'is_active' => true])->save();
 
             // Create a default address for each test user
             Address::create([
@@ -124,7 +125,7 @@ class UserSeeder extends Seeder
                 'phone' => $testUser['phone'],
                 'province' => 'تهران',
                 'city' => 'تهران',
-                'address_line' => 'آدرس پیش‌فرض برای ' . $testUser['name'],
+                'address_line' => 'آدرس پیش‌فرض برای '.$testUser['name'],
                 'postal_code' => '1111111111',
                 'is_default' => true,
             ]);

@@ -3,24 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreAddressRequest;
+use App\Http\Requests\UpdateAddressRequest;
 use App\Models\Address;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AddressController extends Controller
 {
-    protected const RULES = [
-        'title' => ['required', 'string', 'max:50'],
-        'first_name' => ['required', 'string', 'max:50'],
-        'last_name' => ['required', 'string', 'max:50'],
-        'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-        'province' => ['required', 'string', 'max:100'],
-        'city' => ['required', 'string', 'max:100'],
-        'address_line' => ['required', 'string', 'max:500'],
-        'postal_code' => ['nullable', 'string', 'regex:/^\d{10}$/'],
-        'is_default' => ['boolean'],
-    ];
-
     public function index(Request $request): JsonResponse
     {
         $addresses = $request->user()
@@ -32,9 +22,9 @@ class AddressController extends Controller
         return response()->json(['success' => true, 'data' => $addresses]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreAddressRequest $request): JsonResponse
     {
-        $data = $request->validate(self::RULES);
+        $data = $request->validated();
         $user = $request->user();
 
         $isFirstAddress = $user->addresses()->count() === 0;
@@ -63,13 +53,11 @@ class AddressController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, Address $address): JsonResponse
+    public function update(UpdateAddressRequest $request, Address $address): JsonResponse
     {
-        $this->authorize('update', $address);
+        $data = $request->validated();
 
-        $data = $request->validate(self::RULES);
-
-        if ($request->boolean('is_default') && !$address->is_default) {
+        if ($request->boolean('is_default') && ! $address->is_default) {
             $address->user->addresses()->where('is_default', true)->update(['is_default' => false]);
         }
 
@@ -87,7 +75,7 @@ class AddressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'آدرس با موفقیت به‌روزرسانی شد.',
+            'message' => 'آدرس با موفقیت بهروزرسانی شد.',
             'data' => $address->fresh(),
         ]);
     }
@@ -120,7 +108,7 @@ class AddressController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'آدرس پیش‌فرض تنظیم شد.',
+            'message' => 'آدرس پیشفرض تنظیم شد.',
             'data' => $address->fresh(),
         ]);
     }

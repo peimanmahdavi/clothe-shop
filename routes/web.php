@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Auth\PhoneAuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\HomeController;
@@ -17,11 +18,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:global')->group(function () {
     Route::get('/', HomeController::class)->name('home');
 
-// Product catalog (public)
+    // Product catalog (public)
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
-// Cart (works for guests via session and for logged-in users)
+    // Cart (works for guests via session and for logged-in users)
     Route::prefix('cart')->name('cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');
         Route::post('/add', [CartController::class, 'add'])->name('add');
@@ -30,18 +31,22 @@ Route::middleware('throttle:global')->group(function () {
         Route::delete('/clear', [CartController::class, 'clear'])->name('clear');
     });
 
-// Authentication routes (phone + OTP)
+    // Authentication routes (phone + OTP). Sensitive actions are throttled.
     Route::prefix('auth')->name('auth.')->group(function () {
         Route::get('/login', [PhoneAuthController::class, 'showLogin'])->name('login');
-        Route::post('/send-otp', [PhoneAuthController::class, 'sendOtp'])->name('send-otp');
-        Route::post('/verify-otp', [PhoneAuthController::class, 'verifyOtp'])->name('verify-otp');
-        Route::post('/login-password', [PhoneAuthController::class, 'loginWithPassword'])->name('login-password');
+        Route::post('/send-otp', [PhoneAuthController::class, 'sendOtp'])
+            ->middleware('throttle:otp')->name('send-otp');
+        Route::post('/verify-otp', [PhoneAuthController::class, 'verifyOtp'])
+            ->middleware('throttle:login')->name('verify-otp');
+        Route::post('/login-password', [PhoneAuthController::class, 'loginWithPassword'])
+            ->middleware('throttle:login')->name('login-password');
         Route::post('/logout', [PhoneAuthController::class, 'logout'])->name('logout');
         Route::post('/complete-profile', [PhoneAuthController::class, 'completeProfile'])->name('complete-profile');
     });
 
-// User profile routes (protected by auth)
-    Route::middleware('auth')->prefix('profile')->name('profile.')->group(function () {
+    // Customer area. 'auth.active' logs out and blocks banned accounts even
+    // when a valid session already exists.
+    Route::middleware(['auth', 'auth.active'])->prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'dashboard'])->name('dashboard');
 
         // Addresses
@@ -57,28 +62,29 @@ Route::middleware('throttle:global')->group(function () {
 
         // Orders
         Route::get('/orders', [ProfileController::class, 'orders'])->name('orders');
-        Route::post('/orders', [ProfileController::class, 'storeOrder'])->name('orders.store');
+        Route::post('/orders', [ProfileController::class, 'storeOrder'])
+            ->middleware('throttle:orders')->name('orders.store');
         Route::get('/orders/{order}', [ProfileController::class, 'showOrder'])->name('orders.show');
         Route::get('/orders/{order}/upload-receipt', [ProfileController::class, 'showUploadReceipt'])->name('orders.receipt');
-        Route::post('/orders/{order}/upload-receipt', [ProfileController::class, 'uploadReceipt'])->name('orders.receipt.store');
-        Route::get('/orders/{order}/payment/callback', [ProfileController::class, 'paymentCallback'])->name('orders.payment.callback');
+        Route::post('/orders/{order}/upload-receipt', [ProfileController::class, 'uploadReceipt'])
+            ->middleware('throttle:receipts')->name('orders.receipt.store');
+        Route::post('/orders/{order}/payment/callback', [ProfileController::class, 'paymentCallback'])
+            ->middleware('throttle:orders')->name('orders.payment.callback');
 
         // Profile
         Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('update');
 
-        // Account security (password)
+        // Account security (password add/change/remove)
         Route::get('/security', [ProfileController::class, 'showSecurity'])->name('security');
-        Route::put('/security/password', [ProfileController::class, 'updatePassword'])->name('security.password');
-        Route::delete('/security/password', [ProfileController::class, 'removePassword'])->name('security.password.remove');
-
-        // Account security (password)
-        Route::get('/security', [ProfileController::class, 'showSecurity'])->name('security');
-        Route::put('/security/password', [ProfileController::class, 'updatePassword'])->name('security.password');
-        Route::delete('/security/password', [ProfileController::class, 'removePassword'])->name('security.password.remove');
+        Route::put('/security/password', [ProfileController::class, 'updatePassword'])
+            ->middleware('throttle:password-reset')->name('security.password');
+        Route::delete('/security/password', [ProfileController::class, 'removePassword'])
+            ->middleware('throttle:password-reset')->name('security.password.remove');
     });
 
-// AdminMiddleware routes
-    Route::prefix('admin')->name('admin.')->middleware("admin")->group(function () {
+    // Admin area: authentication, active status and admin privilege are all
+    // required. Every write here is CSRF-protected by the web middleware group.
+    Route::prefix('admin')->name('admin.')->middleware(['auth', 'auth.active', 'admin'])->group(function () {
         Route::get('/', DashboardController::class)->name('dashboard');
 
         Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
@@ -98,12 +104,17 @@ Route::middleware('throttle:global')->group(function () {
         Route::resource('brands', BrandController::class)->except(['show', 'create']);
         Route::resource('discounts', DiscountController::class)->except(['show', 'create']);
 
+        // User management (self-lockout protections live in the controller).
+        Route::resource('users', AdminUserController::class)->except(['show']);
+        Route::post('users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])
+            ->name('users.toggle-status');
+
         // Customer carts
-        Route::get('carts', [\App\Http\Controllers\Admin\CartController::class, 'index'])->name('carts.index');
-        Route::get('carts/{cart}', [\App\Http\Controllers\Admin\CartController::class, 'show'])->name('carts.show');
-        Route::post('carts/{cart}/items', [\App\Http\Controllers\Admin\CartController::class, 'addItem'])->name('carts.items.add');
-        Route::put('carts/{cart}/items/{item}', [\App\Http\Controllers\Admin\CartController::class, 'updateItem'])->name('carts.items.update');
-        Route::delete('carts/{cart}/items/{item}', [\App\Http\Controllers\Admin\CartController::class, 'removeItem'])->name('carts.items.remove');
-        Route::delete('carts/{cart}', [\App\Http\Controllers\Admin\CartController::class, 'clear'])->name('carts.clear');
+        Route::get('carts', [App\Http\Controllers\Admin\CartController::class, 'index'])->name('carts.index');
+        Route::get('carts/{cart}', [App\Http\Controllers\Admin\CartController::class, 'show'])->name('carts.show');
+        Route::post('carts/{cart}/items', [App\Http\Controllers\Admin\CartController::class, 'addItem'])->name('carts.items.add');
+        Route::put('carts/{cart}/items/{item}', [App\Http\Controllers\Admin\CartController::class, 'updateItem'])->name('carts.items.update');
+        Route::delete('carts/{cart}/items/{item}', [App\Http\Controllers\Admin\CartController::class, 'removeItem'])->name('carts.items.remove');
+        Route::delete('carts/{cart}', [App\Http\Controllers\Admin\CartController::class, 'clear'])->name('carts.clear');
     });
 });

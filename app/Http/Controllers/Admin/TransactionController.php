@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
+use App\Http\Requests\Admin\UpdateTransactionRequest;
 use App\Models\Transaction;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +18,7 @@ class TransactionController extends Controller
 
         // Search by tracking code, order number, customer name or phone.
         $query->when($request->filled('search'), function ($q) use ($request) {
-            $term = '%' . $request->string('search')->trim() . '%';
+            $term = '%'.$request->string('search')->trim().'%';
             $q->where(function ($q) use ($term) {
                 $q->where('tracking_code', 'like', $term)
                     ->orWhere('ref_id', 'like', $term)
@@ -62,12 +62,9 @@ class TransactionController extends Controller
         ]);
     }
 
-    public function update(Request $request, Transaction $transaction): RedirectResponse
+    public function update(UpdateTransactionRequest $request, Transaction $transaction): RedirectResponse
     {
-        $data = $request->validate([
-            'status' => ['required', 'in:' . implode(',', array_keys(Transaction::STATUSES))],
-            'description' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $data = $request->validated();
 
         $transaction->update([
             'status' => $data['status'],

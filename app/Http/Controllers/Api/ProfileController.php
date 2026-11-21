@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Http\Requests\Api\UpdateProfileRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -29,39 +29,23 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request): JsonResponse
+    public function update(UpdateProfileRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
-            'phone' => ['nullable', 'string', 'regex:/^09\d{9}$/'],
-        ]);
-
+        $data = $request->validated();
         $user = $request->user();
 
-        if (!empty($data['phone']) && $data['phone'] !== $user->phone) {
-            $exists = User::where('phone', $data['phone'])
-                ->where('id', '!=', $user->id)
-                ->exists();
-
-            if ($exists) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'این شماره تلفن قبلاً ثبت شده است.',
-                ], 422);
-            }
-
+        if (! empty($data['phone'])) {
             $user->phone = $data['phone'];
         }
 
         $user->first_name = $data['first_name'];
         $user->last_name = $data['last_name'];
-        $user->name = trim("{$user->first_name} {$user->last_name}");
+        $user->name = trim("{$data['first_name']} {$data['last_name']}");
         $user->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'پروفایل با موفقیت به‌روزرسانی شد.',
+            'message' => 'پروفایل با موفقیت بهروزرسانی شد.',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

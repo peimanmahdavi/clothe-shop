@@ -23,6 +23,7 @@
                     'group' => 'مدیریت فروشگاه',
                     'items' => [
                         ['label' => 'داشبورد', 'icon' => 'grid', 'url' => route('admin.dashboard'), 'match' => 'admin.dashboard'],
+                        ['label' => 'مدیریت کاربران', 'icon' => 'users', 'url' => route('admin.users.index'), 'match' => 'admin.users.*'],
                         ['label' => 'سفارش‌ها', 'icon' => 'bag', 'url' => route('admin.orders.index'), 'match' => 'admin.orders.*', 'badge' => 'orders'],
                         ['label' => 'سبدهای خرید', 'icon' => 'bag', 'url' => route('admin.carts.index'), 'match' => 'admin.carts.*'],
                         ['label' => 'تراکنش‌ها', 'icon' => 'receipt', 'url' => route('admin.transactions.index'), 'match' => 'admin.transactions.*'],
@@ -184,7 +185,7 @@
         </aside>
 
         <div class="min-w-0 max-w-full overflow-x-clip lg:ps-72">
-            <header class="sticky top-0 z-30 w-full max-w-full border-b border-line bg-white/90 backdrop-blur-md">
+            <header class="sticky top-0 z-30 w-full max-w-full border-b border-line bg-white/95 backdrop-blur-md">
                 <div class="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
                     <button type="button" class="icon-button lg:hidden" data-admin-menu-toggle aria-expanded="false" aria-controls="admin-sidebar" aria-label="باز کردن منو">
                         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">

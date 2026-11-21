@@ -1,62 +1,49 @@
-# AGENTS.md — Asemanpoosh (آسمان‌پوش) Cloth Shop
+# AGENTS.md — Asemanpoosh (آسمانپوش) Cloth Shop
 
-Persian (fa, RTL) Laravel e-commerce app + admin panel. When in doubt, follow
-sibling files; this is a real, working app—match its patterns.
+Persian (fa, RTL) Laravel storefront + admin panel. Follow sibling files; this is a working app — match its patterns.
 
-## Stack (verified)
+## Stack & environment (verified)
 
-- PHP 8.5 (`composer.json` requires ^8.3), Laravel framework ^13.17.
-- Tailwind CSS v4 via `@tailwindcss/vite`; Vite ^8; vanilla JS in `resources/js/app.js` (NO Alpine/Livewire).
-- DB: `.env` uses `pgsql`; tests use `sqlite` `:memory:` (`phpunit.xml`). Don't assume SQLite-specific SQL.
-- No Jalali package: Persian dates come from `App\Support\Jalali` + the `@jalali` Blade directive.
-- Tests: PHPUnit ^12. Only `tests/Feature/ExampleTest.php` exists—coverage is thin, add tests as you go.
+- PHP 8.5 installed; `composer.json` requires `php:^8.3`, `laravel/framework:^13.17`, PHPUnit ^12, Pint ^1.27.
+- Tailwind v4 via `@tailwindcss/vite`, Vite 8, vanilla JS in `resources/js/app.js`. No Alpine/Livewire/Inertia.
+- `.env` uses `pgsql`; `phpunit.xml` forces `sqlite` `:memory:` with array cache/session/queue. Don't assume SQLite-specific SQL in dev.
+- **This container has no `pdo_sqlite`**: `php artisan test` fails with "could not find driver (Connection: sqlite)". Tests exist but can't run here — smoke-check with the pgsql DB (tinker / render views) instead.
+- No Jalali package: `App\Support\Jalali` + the `@jalali` Blade directive (registered in `AppServiceProvider`).
+- Fonts resolve at runtime; Vite build warnings about `/fonts/...` are expected and harmless.
 
 ## Commands
 
-```bash
-composer install && npm install        # setup (see composer "setup" script)
-php artisan dev                         # runs serve + queue:listen + pail + vite concurrently
-php artisan serve                       # server only
-npm run dev                             # vite only
-npm run build                           # REQUIRED after JS/CSS changes, else Vite manifest errors
-php artisan migrate --seed --force      # apply schema + seed
-php artisan migrate:fresh --seed --force # rebuild DB (drops all tables)
-php artisan test --compact <path> --filter=name   # tests (sqlite :memory:)
-vendor/bin/pint --dirty --format agent  # format modified PHP before finishing
-```
+- `composer run setup` = install, copy `.env`, `key:generate`, `migrate --force`, `npm install --ignore-scripts`, `npm run build`. Read the script before improvising setup.
+- `php artisan dev` runs serve + queue:listen + pail + vite concurrently (framework multiplex); `npm run dev` is vite only.
+- `npm run build` is required after JS/CSS changes **and after adding new Tailwind classes in Blade** — production CSS is generated at build time, so new classes are otherwise missing (or you get "Unable to locate file in Vite manifest").
+- `php artisan migrate:fresh --seed --force` rebuilds the dev DB (drops tables). Seeded logins come from `ADMIN_PHONE`/`ADMIN_PASSWORD` and `TEST_USER_PHONE`/`TEST_USER_PASSWORD` (`.env.example`); debug OTP is `123456` when `APP_DEBUG=true`.
+- Focused test: `php artisan test --compact tests/Feature/AdminUserManagementTest.php --filter=<name>`.
+- Finish with `vendor/bin/pint --dirty --format agent`, then `php artisan view:cache`, then the narrowest tests that run.
+- No CI workflows and no custom git hooks — verification is manual.
 
-If a frontend change doesn't appear or you see "Unable to locate file in Vite manifest", run `npm run build`.
+## Architecture facts that are easy to miss
 
-## Conventions (match existing code)
+- Auth aliases live in `bootstrap/app.php`: `auth.api` (Bearer, hashed `api_token`), `auth.active` (logs out banned users even with a live session), `admin`. All `/admin/*` routes require `auth` + `auth.active` + `admin`; profile and API routes require `auth.active` too. Guests redirect to `route('auth.login')`. Gate `manage-users` = active admin.
+- ~30 FormRequests in `app/Http/Requests` (`Admin/`, `Api/` subnamespaces). Controllers use `$request->validated()` with strict allowlists — no `$request->all()` or inline `->validate()`. Uploads use UUID filenames with MIME/dimension/size validation.
+- `User::$fillable` deliberately excludes `is_admin`, `is_active`, `otp_*`, `api_token`; privileged writes use `forceFill()`. `UserFactory::newModel()` overrides to forceFill these flags, so tests can use `->admin()`, `->inactive()` or `create(['is_admin' => true])`.
+- Role is the `is_admin` boolean; there is no roles table. User management is at `/admin/users` (`Admin\UserController`); block self-delete/self-demote/self-ban and last-active-admin changes with `User::isLastActiveAdmin()`.
+- Named rate limiters in `AppServiceProvider`: `global`, `login`, `otp`, `password-reset`, `orders`, `receipts`. Apply them to new auth/order/receipt routes.
+- Payments: `Transaction` belongs to `Order` + `User`; methods `gateway` / `card_to_card`. Totals are always recomputed from the server-side cart — never trust a client-supplied `total`. Card flow: order → `pending_transaction` → receipt upload → `pending_verification` → admin approve (`processing`) / reject (back to `pending_transaction`), wrapped in `DB::transaction()`. The payment callback is POST, throttled and replay-guarded.
+- `OrderPolicy` / `AddressPolicy` enforce ownership (registered in `AuthServiceProvider`); call `$this->authorize(...)` and scope lookups to the current user rather than raw IDs.
+- View composers in `AppServiceProvider`: `layouts.admin` gets `$pendingOrdersCount` (only `status = 'pending'`) and `$activeCampaign`; `layouts.app` gets `$cartCount`. Dashboard metrics are computed in `Admin\DashboardController`.
+- Receipts: `storage/app/public/receipts` through the `public/storage` symlink; settings in `config('payment.receipts.*')` (`RECEIPT_DISK`, `RECEIPT_MAX_KB`). Card destination/account/bank come from `config('payment.card_to_card')`. Product images use the separate `products` disk (`public/images/products`).
+- `CardToCardOrderSeeder` generates sample receipts with GD `imagestring()` — Latin text only, since GD lacks Persian shaping.
 
-- Models declare `#[Fillable([...])]` / `#[Hidden([...])]` PHP attributes, NOT `$fillable`/`$hidden` properties.
-- Every model with timestamps casts explicitly; use typed relation methods with PHPDoc (`/** @return HasMany<Transaction, $this> */`).
-- Persian display strings (status labels, gateways) live as `const` maps on the model (e.g. `Order::STATUSES`, `Transaction::STATUSES/PAYMENT_METHODS`) and are rendered via helper methods (`statusLabel()`, `paymentMethodLabel()`). Add new statuses to ALL maps that iterate them (`dashboard.blade.php` `$statusStyles`/`$statusBars`, admin & user views) or you'll hit undefined-key errors.
-- Use named routes + `route()` everywhere.
-- Money: `number_format()` then Persian-digit conversion (the per-view `$toPersian` / `$toman` closures).
-- Views: `@extends('layouts.app')` (storefront) or `@extends('layouts.admin')` (admin); inline `@php` helper closures at top; Blade components in `resources/views/components/` (e.g. `<x-status-badge>`).
-- Tailwind theme tokens are CSS vars in `resources/css/app.css` (`brand`, `accent`, `ink`, `muted`, `line`, `canvas`). Use these, not raw hex.
-- JS: add an `initX()` function in `resources/js/app.js` and call it in the init block at the bottom. Interactivity uses `data-*` hooks.
+## UI conventions
 
-## Architecture & boundaries
+- RTL everywhere (`dir="rtl"`), Vazirmatn font. Storefront views extend `layouts.app`; admin views extend `layouts.admin`. Sticky admin header is `z-30 bg-white/95 backdrop-blur-md`.
+- Tailwind theme tokens are CSS vars in `resources/css/app.css` (`brand*`, `surface`, `canvas`, `ink`, `muted`, `line`, `accent*`); stock Tailwind colors (e.g. `sky-500`) are also available.
+- Money: `number_format()` then the per-view `$toPersian` / `$toman` digit conversion. Persian status/gateway labels are `const` maps on models (`Order::STATUSES`, `Transaction::STATUSES/PAYMENT_METHODS`) rendered via helper methods; add new statuses to every map that iterates them or views break.
+- Models use `#[Fillable(...)]` / `#[Hidden(...)]` attributes (not `$fillable` properties), explicit `casts()`, and typed relation methods with PHPDoc returns.
+- JS: each feature is an `initX()` function in `resources/js/app.js`, called in the bottom init block; interactivity hooks are `data-*`.
+- Zero horizontal scroll below `md` is a hard rule for all data tables (admin orders/carts/users, `profile/orders`, `profile/dashboard`): one unified `<table>` using `hidden md:table-cell`, never `overflow-x-auto` + `min-w-[...]`. Mobile shows 3 compact columns with actions pinned to the RTL left edge. `admin/users` uses `table-fixed md:table-auto` with `w-[38%]/[34%]/[28%]` columns.
 
-- Controllers: `app/Http/Controllers/{Admin,Auth,Api}`, thin; dashboard metrics computed in `Admin\DashboardController`.
-- Services: `app/Services/OtpService.php`, `SmsService.php` (phone+OTP auth; password login optional).
-- Policies: `app/Policies/{OrderPolicy,AddressPolicy}.php` — use `$this->authorize(...)`.
-- Payments: `Transaction` belongs to `Order`+`User`; two methods `gateway`/`card_to_card`. Card-to-card flow: order → `pending_transaction` → upload receipt (`profile.orders.receipt`) → `pending_verification` → admin approve (`processing`) / reject (back to `pending_transaction`). Wrap order+transaction writes in `DB::transaction()`.
-- Receipt images: `storage/app/public/receipts`, served via `public/storage` symlink (`php artisan storage:link`). Card-to-card destination/account/bank read from `config('payment.*')` (env `CARD_TO_CARD_*`).
-- Seeded credentials come from env: `ADMIN_PHONE`/`ADMIN_PASSWORD`, `TEST_USER_PHONE`/`TEST_USER_PASSWORD` (see `.env.example`). Debug OTP is `123456` when `APP_DEBUG=true`.
-- `layouts.admin` shares `$pendingOrdersCount` and `$activeCampaign` via a view composer in `AppServiceProvider`; it only counts `status = 'pending'`.
+## Tooling / meta
 
-## Known issues / gotchas (verified)
-
-- `routes/web.php` has a DUPLICATED profile security block (`/security` routes registered twice). De-duplicate if touching that file; Laravel tolerates it but it's redundant.
-- Receipt generator (`CardToCardOrderSeeder`) uses GD with Latin-only text (GD lacks Persian shaping).
-- Responsive tables: ALL order tables (admin, `profile/orders.blade.php`, `profile/dashboard.blade.php`) must have ZERO horizontal scroll on mobile (< md). Use one unified `<table>` with the `hidden md:table-cell` pattern — never `overflow-x-auto` + `min-w-[...]` (that was the old dashboard bug, now fixed). Mobile shows 3 compact columns: سفارش (order # + Jalali date + compact status badge), مبلغ (Toman, `whitespace-nowrap`), عملیات (stacked/side-by-side compact buttons). Desktop (`md+`) shows all full columns. Actions are pinned to the left edge (RTL) so they stay visible without scrolling.
-- RTL everywhere (`dir="rtl"`); Vazirmatn font. Fonts resolve at runtime (build warns about `/fonts/...` — expected, harmless).
-
-## Tooling
-
-- Laravel Boost MCP is configured (`.mcp.json`); prefer `search-docs`, `database-query`/`database-schema` over raw SQL. `.ai/rules` does NOT exist here; skip that step.
-- Skills live in `.agents/skills` (infer-conventions, laravel-best-practices, tailwindcss-development, testing-best-practices, deploying-to-cloud).
+- Laravel Boost MCP is configured (`.mcp.json`, `opencode.json`); prefer `database-schema` / `database-query` / `search-docs` over raw SQL or guessed APIs. `.ai/rules` does NOT exist (ignore the reference in `CLAUDE.md`). Skills are in both `.agents/skills` and `.claude/skills`. `CLAUDE.md` holds Boost's generic PHP/PHPUnit rules; this file keeps only repo-specific facts.
 - Do not add dependencies or create documentation files without explicit user approval.

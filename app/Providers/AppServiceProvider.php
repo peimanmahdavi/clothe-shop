@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,6 +45,34 @@ class AppServiceProvider extends ServiceProvider
             return $request->user()
                 ? Limit::perMinute(200)->by($request->user()->id)
                 : Limit::perMinute(60)->by($request->ip());
+        });
+
+        // Authentication + OTP endpoints: key by both the account identifier
+        // and IP so neither a distributed attack nor one noisy neighbour can
+        // lock out unrelated users.
+        RateLimiter::for('login', function (Request $request) {
+            return Limit::perMinute(10)->by(Str::transliterate(
+                Str::lower($request->string('phone')->toString()).'|'.$request->ip(),
+            ));
+        });
+
+        RateLimiter::for('otp', function (Request $request) {
+            return Limit::perMinute(5)->by(Str::transliterate(
+                Str::lower($request->string('phone')->toString()).'|'.$request->ip(),
+            ));
+        });
+
+        RateLimiter::for('password-reset', function (Request $request) {
+            return Limit::perMinute(5)->by('user:'.($request->user()?->id ?? $request->ip()));
+        });
+
+        // Expensive state-changing customer actions.
+        RateLimiter::for('orders', function (Request $request) {
+            return Limit::perMinute(10)->by('user:'.($request->user()?->id ?? $request->ip()));
+        });
+
+        RateLimiter::for('receipts', function (Request $request) {
+            return Limit::perMinute(5)->by('user:'.($request->user()?->id ?? $request->ip()));
         });
     }
 }

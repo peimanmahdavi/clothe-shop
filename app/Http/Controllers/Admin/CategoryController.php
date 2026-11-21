@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\Admin\StoreCategoryRequest;
+use App\Http\Requests\Admin\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -16,9 +18,9 @@ class CategoryController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreCategoryRequest $request): RedirectResponse
     {
-        $category = Category::create($this->attributes($request));
+        $category = Category::create($this->attributes($request->validated(), $request));
 
         return redirect()
             ->route('admin.categories.index')
@@ -32,9 +34,9 @@ class CategoryController
         ]);
     }
 
-    public function update(Request $request, Category $category): RedirectResponse
+    public function update(UpdateCategoryRequest $request, Category $category): RedirectResponse
     {
-        $category->update($this->attributes($request));
+        $category->update($this->attributes($request->validated(), $request));
 
         return redirect()
             ->route('admin.categories.index')
@@ -51,16 +53,11 @@ class CategoryController
     }
 
     /**
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function attributes(Request $request): array
+    private function attributes(array $data, Request $request): array
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
-            'description' => ['nullable', 'string', 'max:500'],
-            'sort_order' => ['nullable', 'integer', 'min:0', 'max:999'],
-        ]);
-
         $data['sort_order'] = $data['sort_order'] ?? 0;
         $data['is_active'] = $request->boolean('is_active');
 

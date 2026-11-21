@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\AuthenticateApiToken;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Providers\AuthServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,8 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => route('auth.login'));
         $middleware->alias([
-            'auth.api' => \App\Http\Middleware\AuthenticateApiToken::class,
-            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'auth.api' => AuthenticateApiToken::class,
+            'auth.active' => EnsureUserIsActive::class,
+            'admin' => AdminMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

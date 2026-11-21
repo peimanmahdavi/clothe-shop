@@ -5,19 +5,20 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+// Privileged columns (is_admin, is_active, otp_*) are intentionally absent:
+// they must never be settable through a public registration/profile form.
 #[Fillable([
     'name',
+    'email',
     'phone',
     'password',
-    'otp_code',
-    'otp_expires_at',
-    'is_admin',
     'first_name',
     'last_name',
 ])]
@@ -38,7 +39,42 @@ class User extends Authenticatable
             'otp_expires_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeAdmins(Builder $query): Builder
+    {
+        return $query->where('is_admin', true);
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function roleLabel(): string
+    {
+        return $this->is_admin ? 'مدیر' : 'کاربر عادی';
+    }
+
+    public function statusLabel(): string
+    {
+        return $this->is_active ? 'فعال' : 'مسدود';
+    }
+
+    public function isLastActiveAdmin(): bool
+    {
+        return $this->is_admin && $this->is_active
+            && static::query()->admins()->active()->count() === 1;
     }
 
     /**

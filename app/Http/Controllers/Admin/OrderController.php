@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\RejectTransactionRequest;
+use App\Http\Requests\Admin\UpdateOrderRequest;
 use App\Models\Order;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +19,7 @@ class OrderController extends Controller
             ->with(['user', 'product', 'address', 'transactions' => fn ($q) => $q->latest()])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('search'), function ($q) use ($request) {
-                $term = '%' . $request->string('search')->trim() . '%';
+                $term = '%'.$request->string('search')->trim().'%';
                 $q->where(function ($q) use ($term) {
                     $q->where('number', 'like', $term)
                         ->orWhere('customer_name', 'like', $term)
@@ -67,11 +69,9 @@ class OrderController extends Controller
             ->with('status', 'تراکنش تأیید شد و سفارش به مرحله پردازش رفت.');
     }
 
-    public function rejectTransaction(Request $request, Order $order): RedirectResponse
+    public function rejectTransaction(RejectTransactionRequest $request, Order $order): RedirectResponse
     {
-        $data = $request->validate([
-            'admin_note' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $data = $request->validated();
 
         DB::transaction(function () use ($order, $data) {
             $transaction = $order->transactions()->latest()->first();
@@ -91,12 +91,9 @@ class OrderController extends Controller
             ->with('status', 'فیش رد شد و سفارش به حالت انتظار ثبت فیش بازگشت.');
     }
 
-    public function update(Request $request, Order $order): RedirectResponse
+    public function update(UpdateOrderRequest $request, Order $order): RedirectResponse
     {
-        $data = $request->validate([
-            'status' => ['required', 'in:' . implode(',', array_keys(Order::STATUSES))],
-            'tracking_code' => ['nullable', 'string', 'max:100'],
-        ]);
+        $data = $request->validated();
 
         $order->update([
             'status' => $data['status'],

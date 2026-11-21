@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CompleteProfileRequest;
+use App\Http\Requests\SendOtpRequest;
+use App\Http\Requests\VerifyOtpRequest;
 use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
@@ -14,15 +17,11 @@ class AuthController extends Controller
         protected OtpService $otpService
     ) {}
 
-    public function sendOtp(Request $request): JsonResponse
+    public function sendOtp(SendOtpRequest $request): JsonResponse
     {
-        $request->validate([
-            'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-        ]);
+        $result = $this->otpService->sendOtp($request->validated('phone'));
 
-        $result = $this->otpService->sendOtp($request->phone);
-
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json($result, 422);
         }
 
@@ -33,21 +32,25 @@ class AuthController extends Controller
         ]);
     }
 
-    public function verifyOtp(Request $request): JsonResponse
+    public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
-        $request->validate([
-            'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-            'otp' => ['required', 'digits:6'],
-        ]);
+        $data = $request->validated();
+        $result = $this->otpService->verifyOtp($data['phone'], $data['otp']);
 
-        $result = $this->otpService->verifyOtp($request->phone, $request->otp);
-
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json($result, 422);
         }
 
         /** @var User $user */
         $user = $result['user'];
+
+        if (! $user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'حساب شما مسدود شده است.',
+            ], 403);
+        }
+
         $token = $user->generateApiToken();
 
         return response()->json([
@@ -60,17 +63,14 @@ class AuthController extends Controller
         ]);
     }
 
-    public function completeProfile(Request $request): JsonResponse
+    public function completeProfile(CompleteProfileRequest $request): JsonResponse
     {
-        $request->validate([
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
-        ]);
+        $data = $request->validated();
 
         $user = $request->user();
-        $user->first_name = $request->first_name;
-        $user->last_name = $request->last_name;
-        $user->name = trim("{$user->first_name} {$user->last_name}");
+        $user->first_name = $data['first_name'];
+        $user->last_name = $data['last_name'];
+        $user->name = trim("{$data['first_name']} {$data['last_name']}");
         $user->save();
 
         return response()->json([
@@ -90,6 +90,9 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function userPayload(User $user): array
     {
         return [

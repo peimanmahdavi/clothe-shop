@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\Admin\StoreDiscountRequest;
+use App\Http\Requests\Admin\UpdateDiscountRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Discount;
@@ -19,9 +21,9 @@ class DiscountController
         ]));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreDiscountRequest $request): RedirectResponse
     {
-        $discount = Discount::create($this->attributes($request));
+        $discount = Discount::create($this->attributes($request->validated(), $request));
 
         return redirect()
             ->route('admin.discounts.index')
@@ -35,9 +37,9 @@ class DiscountController
         ]));
     }
 
-    public function update(Request $request, Discount $discount): RedirectResponse
+    public function update(UpdateDiscountRequest $request, Discount $discount): RedirectResponse
     {
-        $discount->update($this->attributes($request));
+        $discount->update($this->attributes($request->validated(), $request));
 
         return redirect()
             ->route('admin.discounts.index')
@@ -67,28 +69,11 @@ class DiscountController
     }
 
     /**
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function attributes(Request $request): array
+    private function attributes(array $data, Request $request): array
     {
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:120'],
-            'code' => ['nullable', 'string', 'max:30'],
-            'percentage' => ['required', 'integer', 'min:1', 'max:90'],
-            'applies_to' => ['required', 'in:all,products,brands,categories'],
-            'product_ids' => ['nullable', 'array'],
-            'product_ids.*' => ['integer', 'exists:products,id'],
-            'brand_ids' => ['nullable', 'array'],
-            'brand_ids.*' => ['integer', 'exists:brands,id'],
-            'category_ids' => ['nullable', 'array'],
-            'category_ids.*' => ['integer', 'exists:categories,id'],
-            'description' => ['nullable', 'string', 'max:500'],
-            'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
-        ], [
-            'ends_at.after_or_equal' => 'تاریخ پایان باید بعد از تاریخ شروع باشد.',
-        ]);
-
         $data['is_active'] = $request->boolean('is_active');
         $data['product_ids'] = $data['applies_to'] === 'products' ? ($data['product_ids'] ?? []) : null;
         $data['brand_ids'] = $data['applies_to'] === 'brands' ? ($data['brand_ids'] ?? []) : null;

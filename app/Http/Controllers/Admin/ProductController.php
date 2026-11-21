@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\Admin\StoreProductRequest;
+use App\Http\Requests\Admin\UpdateProductRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -9,10 +11,14 @@ use App\Models\ProductImage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProductController
 {
+    private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+
     public function index(Request $request): View
     {
         $products = Product::query()
@@ -39,11 +45,9 @@ class ProductController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreProductRequest $request): RedirectResponse
     {
-        $data = $this->validated($request);
-
-        $product = Product::create($this->attributes($request, $data));
+        $product = Product::create($this->attributes($request->validated(), $request));
 
         $this->storeImages($product, $request->file('images', []));
 
@@ -63,17 +67,15 @@ class ProductController
         ]);
     }
 
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
-        $data = $this->validated($request);
-
         if ($product->images()->count() + count($request->file('images', [])) > 3) {
             return back()
                 ->withErrors(['images' => 'برای هر محصول حداکثر ۳ تصویر مجاز است. ابتدا یکی از تصاویر قبلی را حذف کنید.'])
                 ->withInput();
         }
 
-        $product->update($this->attributes($request, $data));
+        $product->update($this->attributes($request->validated(), $request));
 
         $this->storeImages($product, $request->file('images', []));
 
@@ -106,37 +108,10 @@ class ProductController
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    private function validated(Request $request): array
-    {
-        return $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'category_id' => ['required', 'exists:categories,id'],
-            'brand_id' => ['nullable', 'exists:brands,id'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'price' => ['required', 'integer', 'min:1000', 'max:999999999'],
-            'sale_price' => ['nullable', 'integer', 'min:0', 'lt:price'],
-            'stock' => ['required', 'integer', 'min:0', 'max:100000'],
-            'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
-            'reviews_count' => ['nullable', 'integer', 'min:0'],
-            'is_featured' => ['nullable', 'boolean'],
-            'is_active' => ['nullable', 'boolean'],
-            'images' => ['nullable', 'array', 'max:3'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
-        ], [
-            'price.min' => 'قیمت باید حداقل ۱٬۰۰۰ تومان باشد.',
-            'sale_price.lt' => 'قیمت با تخفیف باید کمتر از قیمت اصلی باشد.',
-            'images.max' => 'حداکثر ۳ تصویر برای هر محصول مجاز است.',
-            'images.*.mimes' => 'فرمت تصویر باید jpg، png یا webp باشد.',
-        ]);
-    }
-
-    /**
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function attributes(Request $request, array $data): array
+    private function attributes(array $data, Request $request): array
     {
         $data['brand_id'] = $data['brand_id'] ?? null;
         $data['sale_price'] = $data['sale_price'] ?? null;
@@ -151,7 +126,9 @@ class ProductController
     }
 
     /**
-     * @param  array<int, \Illuminate\Http\UploadedFile>  $images
+     * Store uploads with opaque, non-executable filenames derived from UUIDs.
+     *
+     * @param  array<int, UploadedFile>  $images
      */
     private function storeImages(Product $product, array $images): void
     {
@@ -162,8 +139,11 @@ class ProductController
         $nextSortOrder = (int) $product->images()->max('sort_order') + 1;
 
         foreach ($images as $index => $image) {
+            $extension = strtolower($image->extension());
+            $extension = in_array($extension, self::IMAGE_EXTENSIONS, true) ? $extension : 'jpg';
+
             $product->images()->create([
-                'path' => $image->store('', 'products'),
+                'path' => $image->storeAs('', Str::uuid().'.'.$extension, 'products'),
                 'sort_order' => $nextSortOrder + $index,
             ]);
         }

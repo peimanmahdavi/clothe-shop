@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\Admin\StoreBrandRequest;
+use App\Http\Requests\Admin\UpdateBrandRequest;
 use App\Models\Brand;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -16,9 +18,9 @@ class BrandController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreBrandRequest $request): RedirectResponse
     {
-        $brand = Brand::create($this->attributes($request));
+        $brand = Brand::create($this->attributes($request->validated(), $request));
 
         return redirect()
             ->route('admin.brands.index')
@@ -32,9 +34,9 @@ class BrandController
         ]);
     }
 
-    public function update(Request $request, Brand $brand): RedirectResponse
+    public function update(UpdateBrandRequest $request, Brand $brand): RedirectResponse
     {
-        $brand->update($this->attributes($request));
+        $brand->update($this->attributes($request->validated(), $request));
 
         return redirect()
             ->route('admin.brands.index')
@@ -51,15 +53,11 @@ class BrandController
     }
 
     /**
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function attributes(Request $request): array
+    private function attributes(array $data, Request $request): array
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
-            'description' => ['nullable', 'string', 'max:500'],
-        ]);
-
         $data['is_active'] = $request->boolean('is_active');
 
         return $data;

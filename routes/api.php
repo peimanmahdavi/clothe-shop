@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Route;
 
 // Public authentication (phone + OTP)
 Route::prefix('auth')->name('api.auth.')->group(function () {
-    Route::post('/send-otp', [AuthController::class, 'sendOtp'])->name('send-otp');
-    Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('verify-otp');
+    Route::post('/send-otp', [AuthController::class, 'sendOtp'])->middleware('throttle:otp')->name('send-otp');
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:login')->name('verify-otp');
 });
 
-// Protected routes (Bearer token)
-Route::middleware('auth.api')->group(function () {
+// Protected routes (Bearer token + active account)
+Route::middleware(['auth.api', 'auth.active'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout'])->name('api.auth.logout');
     Route::post('/auth/complete-profile', [AuthController::class, 'completeProfile'])->name('api.auth.complete-profile');
 
@@ -27,6 +27,6 @@ Route::middleware('auth.api')->group(function () {
     Route::post('/addresses/{address}/default', [AddressController::class, 'setDefault'])->name('api.addresses.default');
 
     Route::get('/orders', [OrderController::class, 'index'])->name('api.orders.index');
-    Route::post('/orders', [OrderController::class, 'store'])->name('api.orders.store');
+    Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:orders')->name('api.orders.store');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('api.orders.show');
 });

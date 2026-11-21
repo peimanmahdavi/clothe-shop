@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CompleteProfileRequest;
+use App\Http\Requests\LoginWithPasswordRequest;
+use App\Http\Requests\SendOtpRequest;
+use App\Http\Requests\VerifyOtpRequest;
 use App\Models\User;
 use App\Services\CartService;
 use App\Services\OtpService;
@@ -12,7 +16,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 
 class PhoneAuthController extends Controller
 {
@@ -32,13 +35,9 @@ class PhoneAuthController extends Controller
     /**
      * Send OTP to phone number.
      */
-    public function sendOtp(Request $request): JsonResponse
+    public function sendOtp(SendOtpRequest $request): JsonResponse
     {
-        $request->validate([
-            'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-        ]);
-
-        $result = $this->otpService->sendOtp($request->phone);
+        $result = $this->otpService->sendOtp($request->validated('phone'));
 
         if ($result['success']) {
             return response()->json([
@@ -57,17 +56,22 @@ class PhoneAuthController extends Controller
     /**
      * Verify OTP and log in user.
      */
-    public function verifyOtp(Request $request): JsonResponse
+    public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
-        $request->validate([
-            'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-            'otp' => ['required', 'digits:6'],
-        ]);
-
-        $result = $this->otpService->verifyOtp($request->phone, $request->otp);
+        $data = $request->validated();
+        $result = $this->otpService->verifyOtp($data['phone'], $data['otp']);
 
         if ($result['success']) {
+            /** @var User $user */
             $user = $result['user'];
+
+            if (! $user->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'حساب شما مسدود شده است.',
+                ], 403);
+            }
+
             Auth::login($user, true); // Remember me
 
             // Merge any guest cart (keyed by the pre-login session id) first.
@@ -99,20 +103,23 @@ class PhoneAuthController extends Controller
     /**
      * Log in using phone + password (alternative to OTP).
      */
-    public function loginWithPassword(Request $request): JsonResponse
+    public function loginWithPassword(LoginWithPasswordRequest $request): JsonResponse
     {
-        $request->validate([
-            'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-            'password' => ['required', 'string'],
-        ]);
+        $data = $request->validated();
+        $user = User::where('phone', $data['phone'])->first();
 
-        $user = User::where('phone', $request->phone)->first();
-
-        if (! $user || ! $user->password || ! Hash::check($request->password, $user->password)) {
+        if (! $user || ! $user->password || ! Hash::check($data['password'], $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'شماره موبایل یا رمز عبور اشتباه است.',
             ], 422);
+        }
+
+        if (! $user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'حساب شما مسدود شده است.',
+            ], 403);
         }
 
         Auth::login($user, true);
@@ -144,17 +151,14 @@ class PhoneAuthController extends Controller
     /**
      * Complete user profile (name, last name).
      */
-    public function completeProfile(Request $request): JsonResponse
+    public function completeProfile(CompleteProfileRequest $request): JsonResponse
     {
-        $request->validate([
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
-        ]);
+        $data = $request->validated();
 
         $user = Auth::user();
-        $user->first_name = $request->first_name;
-        $user->last_name = $request->last_name;
-        $user->name = trim("{$request->first_name} {$request->last_name}");
+        $user->first_name = $data['first_name'];
+        $user->last_name = $data['last_name'];
+        $user->name = trim("{$data['first_name']} {$data['last_name']}");
         $user->save();
 
         return response()->json([

@@ -25,11 +25,20 @@ class AuthenticateApiToken
 
         $user = User::where('api_token', hash('sha256', $token))->first();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'توکن احراز هویت نامعتبر است.',
             ], 401);
+        }
+
+        if (! $user->is_active) {
+            $user->revokeApiToken();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'حساب شما مسدود شده است.',
+            ], 403);
         }
 
         $request->setUserResolver(fn () => $user);

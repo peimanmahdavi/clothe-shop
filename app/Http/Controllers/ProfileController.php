@@ -2,6 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ApplyDiscountRequest;
+use App\Http\Requests\PaymentCallbackRequest;
+use App\Http\Requests\RemovePasswordRequest;
+use App\Http\Requests\StoreAddressRequest;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\UpdateAddressRequest;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Http\Requests\UploadReceiptRequest;
 use App\Models\Address;
 use App\Models\Order;
 use App\Models\Product;
@@ -70,20 +79,9 @@ class ProfileController extends Controller
     /**
      * Store a new address.
      */
-    public function storeAddress(Request $request): JsonResponse
+    public function storeAddress(StoreAddressRequest $request): JsonResponse
     {
-        $request->validate([
-            'title' => ['required', 'string', 'max:50'],
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
-            'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-            'province' => ['required', 'string', 'max:100'],
-            'city' => ['required', 'string', 'max:100'],
-            'address_line' => ['required', 'string', 'max:500'],
-            'postal_code' => ['nullable', 'string', 'regex:/^\d{10}$/'],
-            'is_default' => ['boolean'],
-        ]);
-
+        $data = $request->validated();
         $user = Auth::user();
 
         // If this is set as default, unset other defaults
@@ -96,14 +94,14 @@ class ProfileController extends Controller
         $isDefault = $request->boolean('is_default') || $isFirstAddress;
 
         $address = $user->addresses()->create([
-            'title' => $request->title,
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'phone' => $request->phone,
-            'province' => $request->province,
-            'city' => $request->city,
-            'address_line' => $request->address_line,
-            'postal_code' => $request->postal_code,
+            'title' => $data['title'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'phone' => $data['phone'],
+            'province' => $data['province'],
+            'city' => $data['city'],
+            'address_line' => $data['address_line'],
+            'postal_code' => $data['postal_code'] ?? null,
             'is_default' => $isDefault,
         ]);
 
@@ -115,23 +113,11 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update an address.
+     * Update an address. Ownership is enforced by UpdateAddressRequest.
      */
-    public function updateAddress(Request $request, Address $address): JsonResponse
+    public function updateAddress(UpdateAddressRequest $request, Address $address): JsonResponse
     {
-        $this->authorize('update', $address);
-
-        $request->validate([
-            'title' => ['required', 'string', 'max:50'],
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
-            'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-            'province' => ['required', 'string', 'max:100'],
-            'city' => ['required', 'string', 'max:100'],
-            'address_line' => ['required', 'string', 'max:500'],
-            'postal_code' => ['nullable', 'string', 'regex:/^\d{10}$/'],
-            'is_default' => ['boolean'],
-        ]);
+        $data = $request->validated();
 
         // If this is set as default, unset other defaults
         if ($request->boolean('is_default') && ! $address->is_default) {
@@ -139,20 +125,20 @@ class ProfileController extends Controller
         }
 
         $address->update([
-            'title' => $request->title,
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'phone' => $request->phone,
-            'province' => $request->province,
-            'city' => $request->city,
-            'address_line' => $request->address_line,
-            'postal_code' => $request->postal_code,
+            'title' => $data['title'],
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'phone' => $data['phone'],
+            'province' => $data['province'],
+            'city' => $data['city'],
+            'address_line' => $data['address_line'],
+            'postal_code' => $data['postal_code'] ?? null,
             'is_default' => $request->boolean('is_default'),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'آدرس با موفقیت به‌روزرسانی شد.',
+            'message' => 'آدرس با موفقیت بهروزرسانی شد.',
             'address' => $address->fresh(),
         ]);
     }
@@ -194,7 +180,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'آدرس پیش‌فرض تنظیم شد.',
+            'message' => 'آدرس پیشفرض تنظیم شد.',
             'address' => $address->fresh(),
         ]);
     }
@@ -219,7 +205,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * Show order details.
+     * Show order details. The policy prevents reading another user's order.
      */
     public function showOrder(Order $order): View
     {
@@ -241,11 +227,9 @@ class ProfileController extends Controller
     /**
      * Validate and remember a discount code for the current cart.
      */
-    public function applyDiscount(Request $request): JsonResponse
+    public function applyDiscount(ApplyDiscountRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'code' => ['nullable', 'string', 'max:100'],
-        ]);
+        $data = $request->validated();
 
         $cart = $this->cartService->resolve(false);
         $cart?->load(['items.product']);
@@ -322,15 +306,9 @@ class ProfileController extends Controller
     /**
      * Store a new order from the current cart for the authenticated user.
      */
-    public function storeOrder(Request $request): RedirectResponse
+    public function storeOrder(StoreOrderRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'address_id' => ['required', 'integer'],
-            'first_name' => ['nullable', 'string', 'max:50'],
-            'last_name' => ['nullable', 'string', 'max:50'],
-            'payment_method' => ['nullable', 'in:gateway,card_to_card'],
-            'discount_code' => ['nullable', 'string', 'max:100'],
-        ]);
+        $data = $request->validated();
 
         $paymentMethod = $data['payment_method'] ?? 'gateway';
         $isCardToCard = $paymentMethod === 'card_to_card';
@@ -358,8 +336,6 @@ class ProfileController extends Controller
             return redirect()->route('cart.index')->withErrors(['cart' => 'سبد خرید شما خالی است.']);
         }
 
-        // Validate stock once more under lock inside the transaction; here we
-        // just reject obviously empty/failed carts.
         $subtotal = $cart->subtotal();
         $resolved = $this->discountService->resolve($data['discount_code'] ?? null, $cart->items, $subtotal);
         $discountAmount = $resolved['amount'];
@@ -475,16 +451,14 @@ class ProfileController extends Controller
     /**
      * Store the uploaded card-to-card receipt and move the order to verification.
      */
-    public function uploadReceipt(Request $request, Order $order): RedirectResponse
+    public function uploadReceipt(UploadReceiptRequest $request, Order $order): RedirectResponse
     {
-        $this->authorize('view', $order);
+        $data = $request->validated();
+        $file = $request->file('receipt_image');
+        $extension = strtolower($file->extension());
+        $extension = in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true) ? $extension : 'jpg';
 
-        $data = $request->validate([
-            'tracking_code' => ['required', 'string', 'max:100'],
-            'receipt_image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
-        ]);
-
-        DB::transaction(function () use ($order, $data) {
+        DB::transaction(function () use ($order, $data, $file, $extension) {
             $transaction = $order->transactions()->latest()->first()
                 ?? $order->transactions()->make([
                     'user_id' => $order->user_id,
@@ -493,7 +467,8 @@ class ProfileController extends Controller
                     'payment_method' => 'card_to_card',
                 ]);
 
-            $path = request()->file('receipt_image')->store('receipts', 'public');
+            // Opaque filename: the user-supplied name is never used on disk.
+            $path = $file->storeAs('receipts', Str::uuid().'.'.$extension, 'public');
 
             $transaction->fill([
                 'receipt_image' => $path,
@@ -516,20 +491,17 @@ class ProfileController extends Controller
     /**
      * Payment gateway callback / verification endpoint.
      *
-     * Called by the gateway after the user returns from payment. Verifies the
-     * payment, then creates or updates the linked Transaction and Order state
-     * atomically so the ledger never drifts from the order.
+     * Only a pending order with a pending transaction can be transitioned, so
+     * a replayed callback cannot re-process an already settled order.
      */
-    public function paymentCallback(Request $request, Order $order): RedirectResponse
+    public function paymentCallback(PaymentCallbackRequest $request, Order $order): RedirectResponse
     {
-        $this->authorize('view', $order);
+        $data = $request->validated();
 
-        $data = $request->validate([
-            'status' => ['required', 'in:success,failed'],
-            'ref_id' => ['nullable', 'string', 'max:191'],
-            'card_number' => ['nullable', 'string', 'max:32'],
-            'gateway' => ['nullable', 'string', 'max:50'],
-        ]);
+        $hasPendingTransaction = $order->transactions()->where('status', 'pending')->exists();
+        if ($order->status !== 'pending' || ! $hasPendingTransaction) {
+            return back()->withErrors(['payment' => 'این سفارش قابل پردازش نیست.']);
+        }
 
         $succeeded = $data['status'] === 'success';
 
@@ -537,16 +509,7 @@ class ProfileController extends Controller
             $transaction = $order->transactions()
                 ->where('status', 'pending')
                 ->latest()
-                ->first();
-
-            if (! $transaction) {
-                $transaction = $order->transactions()->make([
-                    'user_id' => $order->user_id,
-                    'amount' => $order->total,
-                    'gateway' => $data['gateway'] ?? 'zarinpal',
-                    'tracking_code' => Transaction::generateTrackingCode(),
-                ]);
-            }
+                ->firstOrFail();
 
             $transaction->fill([
                 'status' => $succeeded ? 'paid' : 'failed',
@@ -561,11 +524,7 @@ class ProfileController extends Controller
             ]);
             $transaction->save();
 
-            if ($succeeded) {
-                $order->update(['status' => 'processing']);
-            } else {
-                $order->update(['status' => 'cancelled']);
-            }
+            $order->update(['status' => $succeeded ? 'processing' : 'cancelled']);
         });
 
         return redirect()
@@ -588,20 +547,10 @@ class ProfileController extends Controller
     /**
      * Set or change the user's password.
      */
-    public function updatePassword(Request $request): RedirectResponse
+    public function updatePassword(UpdatePasswordRequest $request): RedirectResponse
     {
+        $data = $request->validated();
         $user = Auth::user();
-
-        $rules = [
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ];
-
-        // Require the current password only when one already exists.
-        if (filled($user->password)) {
-            $rules['current_password'] = ['required', 'current_password'];
-        }
-
-        $data = $request->validate($rules);
         $hadPassword = filled($user->password);
 
         $user->password = $data['password'];
@@ -610,62 +559,43 @@ class ProfileController extends Controller
         return redirect()
             ->route('profile.security')
             ->with('status', $hadPassword
-                ? 'رمز عبور شما به‌روزرسانی شد.'
+                ? 'رمز عبور شما بهروزرسانی شد.'
                 : 'رمز عبور برای حساب شما تنظیم شد.');
     }
 
     /**
      * Remove the user's password (login stays via OTP).
      */
-    public function removePassword(Request $request): RedirectResponse
+    public function removePassword(RemovePasswordRequest $request): RedirectResponse
     {
+        $request->validated();
+
         $user = Auth::user();
-
-        $request->validate([
-            'current_password' => ['required', 'current_password'],
-        ]);
-
         $user->password = null;
         $user->save();
 
         return redirect()
             ->route('profile.security')
-            ->with('status', 'رمز عبور حذف شد. از این پس با رمز یک‌بارمصرف وارد می‌شوید.');
+            ->with('status', 'رمز عبور حذف شد. از این پس با رمز یکبارمصرف وارد میشوید.');
     }
 
     /**
-     * Update user profile info.
+     * Update user profile info. Phone uniqueness is enforced by the FormRequest.
      */
-    public function updateProfile(Request $request): JsonResponse
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
-        $request->validate([
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
-            'phone' => ['required', 'string', 'regex:/^09\d{9}$/'],
-        ]);
-
+        $data = $request->validated();
         $user = Auth::user();
 
-        // Check if phone is already taken by another user
-        if ($request->phone !== $user->phone) {
-            $exists = User::where('phone', $request->phone)->where('id', '!=', $user->id)->exists();
-            if ($exists) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'این شماره تلفن قبلاً ثبت شده است.',
-                ], 422);
-            }
-        }
-
-        $user->first_name = $request->first_name;
-        $user->last_name = $request->last_name;
-        $user->phone = $request->phone;
-        $user->name = trim("{$request->first_name} {$request->last_name}");
+        $user->first_name = $data['first_name'];
+        $user->last_name = $data['last_name'];
+        $user->phone = $data['phone'];
+        $user->name = trim("{$data['first_name']} {$data['last_name']}");
         $user->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'پروفایل با موفقیت به‌روزرسانی شد.',
+            'message' => 'پروفایل با موفقیت بهروزرسانی شد.',
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
